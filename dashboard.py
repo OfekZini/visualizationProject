@@ -12,7 +12,7 @@ st.set_page_config(layout="wide")
 # Load the dataset
 @st.cache_data
 def load_data():
-    return pd.read_csv('NA_protests_filtered.csv')
+    return pd.read_csv('protests us final.csv')
 
 
 protests_df = load_data()
