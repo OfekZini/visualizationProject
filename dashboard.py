@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-from natsort import index_natsorted
 
 # Set page configuration to wide layout
 st.set_page_config(layout="wide")
@@ -17,42 +16,191 @@ def load_data():
 
 protests_df = load_data()
 
+# Preprocessing
+protests_df['event_date'] = pd.to_datetime(protests_df['event_date'], format='%d/%m/%Y')  # desired date format
+protests_df = protests_df.sort_values('event_date')  # sorting by date
+protests_df = protests_df[protests_df['country'] == 'United States']  # keeping protests from the USA only
 
-# Title
-st.title("Protests in North America")
 
-# Display a sample of the data
-st.subheader("Dataset Preview")
-st.dataframe(protests_df.head())
-
-# Add a selectbox to filter by a column (example: 'state' or any column in your dataset)
-columns = protests_df.columns
-selected_column = st.selectbox("Select a column to filter", columns)
-
-unique_values = protests_df[selected_column].unique()
-selected_value = st.selectbox(f"Select a value in '{selected_column}'", unique_values)
-
-# Filter data based on selection
-filtered_df = protests_df[protests_df[selected_column] == selected_value]
-
-# Display the filtered data
-st.subheader(f"Filtered Data by {selected_column}: {selected_value}")
-st.dataframe(filtered_df)
-
-# Create a simple Plotly visualization (example: count by state or other column)
-if "state" in columns:
-    state_count = protests_df['state'].value_counts().reset_index()
-    state_count.columns = ['state', 'count']
-
-    fig = px.bar(
-        state_count,
-        x='state',
-        y='count',
-        title="Number of Protests by State",
-        labels={'count': 'Number of Protests', 'state': 'State'},
-        color='state'
+# Map count visualization
+def plot_usa_map(filtered_data):
+    # Create a new column for protest type
+    filtered_data['Protest_Type'] = filtered_data.apply(
+        lambda row: 'Pro Israel' if row['Pro Israel'] == 1 else
+        ('Pro Palestine' if row['Pro Palestine'] == 1 else None),
+        axis=1
     )
 
-    st.plotly_chart(fig)
-else:
-    st.write("No 'state' column found in the dataset for this example.")
+    # Format the date column for hover display
+    filtered_data['formatted_date'] = filtered_data['event_date'].dt.strftime('%d/%m/%Y')
+
+    # Create the scatter_geo plot
+    fig = px.scatter_geo(
+        filtered_data,
+        lat='latitude',
+        lon='longitude',
+        color='Protest_Type',
+        color_discrete_map={"Pro Israel": "blue", "Pro Palestine": "red"},
+        scope="usa",
+        hover_data={
+            'Protest_Type': True,
+            'admin1': True,
+            'formatted_date': True,
+            'latitude': False,
+            'longitude': False
+        },
+        hover_name=None,
+        custom_data=['Protest_Type', 'admin1', 'formatted_date']
+    )
+
+    # Update hover template
+    fig.update_traces(
+        hovertemplate=(
+                "Protest Type: %{customdata[0]}<br>" +
+                "State: %{customdata[1]}<br>" +
+                "Event Date: %{customdata[2]}<br>" +
+                "<extra></extra>"
+        )
+    )
+
+    # Adjust layout and height
+    fig.update_layout(
+        height=650,
+        margin={"r": 0, "t": 40, "l": 0, "b": 0}
+    )
+    return fig
+
+
+# Time-series histogram charts by selected state
+def plot_chronological_analysis(data, selected_state):
+    # Get the full date range and extend the start date to October 2023
+    min_date = pd.Timestamp('2023-10-01')  # Set to start of October 2023
+    max_date = data['event_date'].max()
+    date_range = [min_date, max_date]
+
+    # Filter data by state if selected
+    filtered_data = data
+    if selected_state and selected_state != "All States":
+        filtered_data = data[data['admin1'] == selected_state]
+
+    # Calculate monthly sums for the filtered dataset
+    monthly_sums_israel = filtered_data[filtered_data['Pro Israel'] == 1].groupby(
+        filtered_data['event_date'].dt.to_period('M')).size()
+    monthly_sums_palestine = filtered_data[filtered_data['Pro Palestine'] == 1].groupby(
+        filtered_data['event_date'].dt.to_period('M')).size()
+
+    # Find the maximum monthly sum across both types of protests for the selected state
+    max_monthly_protests = max(
+        monthly_sums_israel.max() if len(monthly_sums_israel) > 0 else 0,
+        monthly_sums_palestine.max() if len(monthly_sums_palestine) > 0 else 0
+    )
+
+    # allocate relevant subsets of the data by the protest type
+    pro_israel = filtered_data[filtered_data['Pro Israel'] == 1]
+    pro_palestine = filtered_data[filtered_data['Pro Palestine'] == 1]
+
+    # Create the first histogram for Pro-Israel protests
+    fig1 = go.Figure()
+
+    fig1.add_trace(go.Histogram(
+        x=pro_israel['event_date'],
+        name='Pro-Israel',
+        marker=dict(color='blue'),
+        nbinsx=30,
+        opacity=0.7
+    ))
+
+    fig1.update_layout(
+        title="Pro-Israel Protests Over Time",
+        xaxis_title="Date",
+        yaxis_title="Count of Protests",
+        xaxis_range=date_range,
+        xaxis=dict(
+            dtick="M1",
+            tickformat="%b %Y",
+            tickangle=45
+        ),
+        yaxis_range=[0, max_monthly_protests],
+        height=300,
+        width=800,
+        margin=dict(
+            l=50,
+            r=20,
+            t=40,
+            b=80
+        ),
+        barmode='overlay'
+    )
+
+    # Create the second histogram for Pro-Palestine protests
+    fig2 = go.Figure()
+
+    fig2.add_trace(go.Histogram(
+        x=pro_palestine['event_date'],
+        name='Pro-Palestine',
+        marker=dict(color='red'),
+        nbinsx=30,
+        opacity=0.7
+    ))
+
+    fig2.update_layout(
+        title="Pro-Palestine Protests Over Time",
+        xaxis_title="Date",
+        yaxis_title="Count of Protests",
+        xaxis_range=date_range,
+        xaxis=dict(
+            dtick="M1",
+            tickformat="%b %Y",
+            tickangle=45
+        ),
+        yaxis_range=[0, max_monthly_protests],
+        height=300,
+        width=800,
+        margin=dict(
+            l=50,
+            r=20,
+            t=40,
+            b=80
+        ),
+        barmode='overlay'
+    )
+
+    return fig1, fig2
+
+
+# Layout
+st.title("Protests in the USA")
+
+# Create a two-column layout with adjusted widths
+col1, col2 = st.columns([3, 2])  # col1 (map) is wider, col2 (plots) is narrower
+
+# Map on the left (col1)
+with col1:
+    st.subheader("USA Map of Protests")  # subheader
+    usa_map = plot_usa_map(protests_df)
+    st.plotly_chart(usa_map, use_container_width=True, height=700)  # Larger map height
+
+# State selection bar and time-series charts on the right (col2)
+with col2:
+    st.subheader("State Selection and Chronological Analysis")  # subheader
+
+    # Custom CSS to adjust the width of the selectbox to 50%
+    st.markdown("""
+        <style>
+        div[data-baseweb="select"] > div {
+            max-width: 200px; /* Set the maximum width */
+            width: 50%; /* Set the desired width */
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+    # Create state selection bar
+    all_states = ["All States"] + sorted(protests_df['admin1'].dropna().unique(), key=str)
+    selected_state = st.selectbox("Select a State", all_states, index=0)
+
+    # Generate the time-series plots
+    fig1, fig2 = plot_chronological_analysis(protests_df, selected_state)
+
+    # Display the two plots stacked vertically
+    st.plotly_chart(fig1, use_container_width=True)
+    st.plotly_chart(fig2, use_container_width=True)
