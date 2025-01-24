@@ -32,7 +32,17 @@ def load_data():
 
     return data
 
-def visualize_line_plot(df, start_date, end_date, selected_groups, pro_palestine=True):
+
+def format_group_name(group_name):
+    """Format group names to start with a capital letter and remove '_group'."""
+    return group_name.replace("_group", "").capitalize()
+
+
+def inverse_format_group_name(display_name):
+    """Revert formatted group names back to the original column names."""
+    return display_name.lower().replace(" ", "_") + "_group"
+
+def visualize_line_plot(df, start_date, end_date, selected_groups, metric, pro_palestine=True):
     # Filter based on Pro Palestine or Pro Israel
     if pro_palestine:
         filtered_df = df[df['Pro Palestine'] == 1]
@@ -70,25 +80,33 @@ def visualize_line_plot(df, start_date, end_date, selected_groups, pro_palestine
     # Convert 'month' back to datetime for plotting
     grouped_data['month'] = grouped_data['month'].dt.to_timestamp()
 
+    # Choose metric for y-axis
+    y_axis = 'num_protests' if metric == 'Number of Protests' else 'total_crowd'
+    y_label = 'Number of Protests' if metric == 'Number of Protests' else 'Number of Protesters'
+
     # Create the line plot
     fig = px.line(
         grouped_data,
         x='month',
-        y='total_crowd',  # Y-axis as total protestors
+        y=y_axis,
         color='group',
         line_group='group',
         line_shape='linear',
-        title='Protestors by Group Over Time',
-        labels={'month': 'Month', 'total_crowd': 'Total Protestors', 'group': 'Group'},
+        title=f'{y_label} by Group Over Time',
+        labels={
+            'month': 'Month',
+            y_axis: y_label,
+            'group': 'Group'
+        },
         width=900,
         height=500
     )
 
-    # Adjust line width based on the number of protests in that month
+    # Adjust line width and opacity for all traces
     for trace in fig.data:
-        group = trace.name
-        trace_data = grouped_data[grouped_data['group'] == group]
-        trace['line']['width'] = trace_data['num_protests'].max() / 10  # Scale for better visibility
+        trace['line']['width'] = 6  # Slightly thicker lines
+        trace['opacity'] = 0.65
+        trace['name'] = format_group_name(trace['name'])  # Format group names
 
     return fig
 
@@ -99,48 +117,69 @@ protests_df = load_data()
 # Streamlit App
 st.title("Protest Visualization in the USA")
 
-# Sidebar: Date Range Selection using two date inputs
-st.sidebar.header("Filter Options")
+# Selection Options: Displayed above the plots
+st.subheader("Filter Options")
 
+# Date Range Selection
 min_date = protests_df['event_date'].min().date()
 max_date = protests_df['event_date'].max().date()
 
-start_date = st.sidebar.date_input(
-    "Start Date (First day of month)",
-    value=min_date,
-    min_value=min_date,
-    max_value=max_date
-)
+col1, col2 = st.columns(2)
 
-end_date = st.sidebar.date_input(
-    "End Date (Last day of month)",
-    value=max_date,
-    min_value=min_date,
-    max_value=max_date
-)
+with col1:
+    start_date = st.date_input(
+        "Start Date (First day of month)",
+        value=min_date,
+        min_value=min_date,
+        max_value=max_date
+    )
+
+with col2:
+    end_date = st.date_input(
+        "End Date (Last day of month)",
+        value=max_date,
+        min_value=min_date,
+        max_value=max_date
+    )
 
 # Ensure start_date is before end_date
 if start_date > end_date:
-    st.sidebar.error("Start date must be before or equal to the end date.")
+    st.error("Start date must be before or equal to the end date.")
 
-# Group Selection
-groups = [
-    "palestenian_group", "jewish_group", "students_group", "teachers_group",
-    "women_group", "political_group", "lgbt_group", "other_group"
-]
-selected_groups = st.sidebar.multiselect("Select Groups to Display", groups, default=groups)
+# Group Selection and Metric Toggle in the same row
+col1, col2 = st.columns(2)
+
+with col1:
+    original_groups = [
+        "palestenian_group", "jewish_group", "students_group", "teachers_group",
+        "women_group", "political_group", "lgbt_group", "other_group"
+    ]
+    display_groups = [format_group_name(group) for group in original_groups]
+    selected_display_groups = st.multiselect("Select Groups to Display", display_groups, default=display_groups)
+
+    # Map back to original group names for processing
+    selected_groups = [inverse_format_group_name(group) for group in selected_display_groups]
+
+with col2:
+    metric = st.radio(
+        "Select Metric to Display",
+        ['Number of Protests', 'Number of Protesters'],
+        horizontal=True
+    )
 
 # Create two plots: one for Pro Palestine and one for Pro Israel
+st.subheader("Protests Visualization")
+
 col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Pro Palestine Protests")
     # Plot for Pro Palestine
-    palestine_plot = visualize_line_plot(protests_df, start_date, end_date, selected_groups, pro_palestine=True)
+    palestine_plot = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, pro_palestine=True)
     st.plotly_chart(palestine_plot, use_container_width=True)
 
 with col2:
     st.subheader("Pro Israel Protests")
     # Plot for Pro Israel
-    israel_plot = visualize_line_plot(protests_df, start_date, end_date, selected_groups, pro_palestine=False)
+    israel_plot = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, pro_palestine=False)
     st.plotly_chart(israel_plot, use_container_width=True)
