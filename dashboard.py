@@ -21,53 +21,128 @@ protests_df['event_date'] = pd.to_datetime(protests_df['event_date'], format='%d
 protests_df = protests_df.sort_values('event_date')  # sorting by date
 protests_df = protests_df[protests_df['country'] == 'United States']  # keeping protests from the USA only
 
-
+# Only selected state points are shown on the map
 # Map count visualization
-def plot_usa_map(filtered_data):
-    # Create a new column for protest type
-    filtered_data['Protest_Type'] = filtered_data.apply(
-        lambda row: 'Pro Israel' if row['Pro Israel'] == 1 else
-        ('Pro Palestine' if row['Pro Palestine'] == 1 else None),
-        axis=1
+# def plot_usa_map(filtered_data, selected_state=None):
+#     # Create a new column for protest type
+#     filtered_data['Protest_Type'] = filtered_data.apply(
+#         lambda row: 'Pro Israel' if row['Pro Israel'] == 1 else
+#         ('Pro Palestine' if row['Pro Palestine'] == 1 else None),
+#         axis=1
+#     )
+#
+#     # Format the date column for hover display
+#     filtered_data['formatted_date'] = filtered_data['event_date'].dt.strftime('%d/%m/%Y')
+#
+#     # Create a copy of the filtered data
+#     plot_data = filtered_data.copy()
+#
+#     # Adjust opacity based on selected state
+#     if selected_state and selected_state != "All States":
+#         plot_data = plot_data[plot_data['admin1'] == selected_state]
+#
+#     # Create the scatter_geo plot
+#     fig = px.scatter_geo(
+#         plot_data,
+#         lat='latitude',
+#         lon='longitude',
+#         color='Protest_Type',
+#         color_discrete_map={"Pro Israel": "blue", "Pro Palestine": "red"},
+#         scope="usa",
+#         hover_data={
+#             'Protest_Type': True,
+#             'admin1': True,
+#             'formatted_date': True,
+#             'latitude': False,
+#             'longitude': False,
+#         },
+#         hover_name=None,
+#         custom_data=['Protest_Type', 'admin1', 'formatted_date']
+#     )
+#
+#     # Update hover template
+#     fig.update_traces(
+#         hovertemplate=(
+#                 "Protest Type: %{customdata[0]}<br>" +
+#                 "State: %{customdata[1]}<br>" +
+#                 "Event Date: %{customdata[2]}<br>" +
+#                 "<extra></extra>"
+#         )
+#     )
+#
+#     # Adjust layout and height
+#     fig.update_layout(
+#         height=650,
+#         margin={"r": 0, "t": 40, "l": 0, "b": 0}
+#     )
+#     return fig
+
+
+# All state points are shown on the map but with different opacity and marker size
+def plot_usa_map(filtered_data, selected_state=None):
+    # Filter to only Pro Israel or Pro Palestine protests
+    filtered_data = filtered_data[(filtered_data['Pro Israel'] == 1) | (filtered_data['Pro Palestine'] == 1)].copy()
+
+    # Create Protest_Type column
+    filtered_data['Protest_Type'] = np.where(
+        filtered_data['Pro Israel'] == 1, 'Pro Israel', 'Pro Palestine'
     )
 
     # Format the date column for hover display
     filtered_data['formatted_date'] = filtered_data['event_date'].dt.strftime('%d/%m/%Y')
 
-    # Create the scatter_geo plot
-    fig = px.scatter_geo(
-        filtered_data,
-        lat='latitude',
-        lon='longitude',
-        color='Protest_Type',
-        color_discrete_map={"Pro Israel": "blue", "Pro Palestine": "red"},
-        scope="usa",
-        hover_data={
-            'Protest_Type': True,
-            'admin1': True,
-            'formatted_date': True,
-            'latitude': False,
-            'longitude': False
-        },
-        hover_name=None,
-        custom_data=['Protest_Type', 'admin1', 'formatted_date']
-    )
+    # Determine opacity and marker size
+    if selected_state and selected_state != "All States":
+        filtered_data['opacity'] = np.where(
+            filtered_data['admin1'] == selected_state, 1.0, 0.2
+        )
+        filtered_data['marker_size'] = np.where(
+            filtered_data['admin1'] == selected_state, 10, 6
+        )
+    else:
+        # filtered_data['opacity'] = 1.0
+        filtered_data['opacity'] = np.where(
+            filtered_data['Protest_Type'] == 'Pro Palestine', 0.6, 1.0
+        )
+        filtered_data['marker_size'] = 8
 
-    # Update hover template
-    fig.update_traces(
-        hovertemplate=(
+    # Create separate traces for Pro Israel and Pro Palestine
+    fig = go.Figure()
+
+    for protest_type, color in [('Pro Israel', 'blue'), ('Pro Palestine', 'red')]:
+        protest_data = filtered_data[filtered_data['Protest_Type'] == protest_type]
+        fig.add_trace(go.Scattergeo(
+            lon=protest_data['longitude'],
+            lat=protest_data['latitude'],
+            text=protest_data['admin1'],
+            mode='markers',
+            marker=dict(
+                size=protest_data['marker_size'],
+                color=color,
+                opacity=protest_data['opacity']
+            ),
+            hovertemplate=(
                 "Protest Type: %{customdata[0]}<br>" +
-                "State: %{customdata[1]}<br>" +
-                "Event Date: %{customdata[2]}<br>" +
+                "State: %{text}<br>" +
+                "Event Date: %{customdata[1]}<br>" +
                 "<extra></extra>"
+            ),
+            customdata=list(zip(protest_data['Protest_Type'], protest_data['formatted_date'])),
+            name=protest_type  # Legend entry
+        ))
+
+    # Update layout to include a legend with a title
+    fig.update_layout(
+        title='Protests in the USA',
+        geo_scope='usa',
+        height=650,
+        margin={"r": 0, "t": 40, "l": 0, "b": 0},
+        legend=dict(
+            title=dict(text='Protest Type'),
+            itemsizing='constant'
         )
     )
 
-    # Adjust layout and height
-    fig.update_layout(
-        height=650,
-        margin={"r": 0, "t": 40, "l": 0, "b": 0}
-    )
     return fig
 
 
@@ -174,12 +249,6 @@ st.title("Protests in the USA")
 # Create a two-column layout with adjusted widths
 col1, col2 = st.columns([3, 2])  # col1 (map) is wider, col2 (plots) is narrower
 
-# Map on the left (col1)
-with col1:
-    st.subheader("USA Map of Protests")  # subheader
-    usa_map = plot_usa_map(protests_df)
-    st.plotly_chart(usa_map, use_container_width=True, height=700)  # Larger map height
-
 # State selection bar and time-series charts on the right (col2)
 with col2:
     st.subheader("State Selection and Chronological Analysis")  # subheader
@@ -204,3 +273,35 @@ with col2:
     # Display the two plots stacked vertically
     st.plotly_chart(fig1, use_container_width=True)
     st.plotly_chart(fig2, use_container_width=True)
+
+# Map on the left (col1)
+with col1:
+    st.subheader("USA Map of Protests")  # subheader
+    # print in terminal the selected state
+    usa_map = plot_usa_map(protests_df, selected_state)
+    st.plotly_chart(usa_map, use_container_width=True, height=700)  # Larger map height
+
+# # State selection bar and time-series charts on the right (col2)
+# with col2:
+#     st.subheader("State Selection and Chronological Analysis")  # subheader
+#
+#     # Custom CSS to adjust the width of the selectbox to 50%
+#     st.markdown("""
+#         <style>
+#         div[data-baseweb="select"] > div {
+#             max-width: 200px; /* Set the maximum width */
+#             width: 50%; /* Set the desired width */
+#         }
+#         </style>
+#         """, unsafe_allow_html=True)
+#
+#     # Create state selection bar
+#     all_states = ["All States"] + sorted(protests_df['admin1'].dropna().unique(), key=str)
+#     selected_state = st.selectbox("Select a State", all_states, index=0)
+#
+#     # Generate the time-series plots
+#     fig1, fig2 = plot_chronological_analysis(protests_df, selected_state)
+#
+#     # Display the two plots stacked vertically
+#     st.plotly_chart(fig1, use_container_width=True)
+#     st.plotly_chart(fig2, use_container_width=True)
