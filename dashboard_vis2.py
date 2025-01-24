@@ -42,7 +42,8 @@ def inverse_format_group_name(display_name):
     """Revert formatted group names back to the original column names."""
     return display_name.lower().replace(" ", "_") + "_group"
 
-def visualize_line_plot(df, start_date, end_date, selected_groups, metric, pro_palestine=True):
+
+def visualize_line_plot(df, start_date, end_date, selected_groups, metric, aggregation, pro_palestine=True):
     # Filter based on Pro Palestine or Pro Israel
     if pro_palestine:
         filtered_df = df[df['Pro Palestine'] == 1]
@@ -70,15 +71,20 @@ def visualize_line_plot(df, start_date, end_date, selected_groups, metric, pro_p
     # Keep only rows where 'count' is 1 (indicating a protest for the group)
     melted_df = melted_df[melted_df['count'] == 1]
 
-    # Group by month and group type, summing the number of protests and the crowd size
-    melted_df['month'] = melted_df['event_date'].dt.to_period('M')
-    grouped_data = melted_df.groupby(['month', 'group']).agg(
+    # Add a column for aggregation period (week or month)
+    if aggregation == 'Week':
+        melted_df['period'] = melted_df['event_date'].dt.to_period('W')
+    else:
+        melted_df['period'] = melted_df['event_date'].dt.to_period('M')
+
+    # Group by the selected period and group type, summing the number of protests and the crowd size
+    grouped_data = melted_df.groupby(['period', 'group']).agg(
         num_protests=('count', 'size'),
         total_crowd=('Crowd_size', 'sum')
     ).reset_index()
 
-    # Convert 'month' back to datetime for plotting
-    grouped_data['month'] = grouped_data['month'].dt.to_timestamp()
+    # Convert 'period' back to datetime for plotting
+    grouped_data['period'] = grouped_data['period'].dt.to_timestamp()
 
     # Choose metric for y-axis
     y_axis = 'num_protests' if metric == 'Number of Protests' else 'total_crowd'
@@ -87,14 +93,14 @@ def visualize_line_plot(df, start_date, end_date, selected_groups, metric, pro_p
     # Create the line plot
     fig = px.line(
         grouped_data,
-        x='month',
+        x='period',
         y=y_axis,
         color='group',
         line_group='group',
         line_shape='linear',
         title=f'{y_label} by Group Over Time',
         labels={
-            'month': 'Month',
+            'period': 'Period',
             y_axis: y_label,
             'group': 'Group'
         },
@@ -104,11 +110,11 @@ def visualize_line_plot(df, start_date, end_date, selected_groups, metric, pro_p
 
     # Adjust line width and opacity for all traces
     for trace in fig.data:
-        trace['line']['width'] = 6  # Slightly thicker lines
+        trace['line']['width'] = 5  # Slightly thicker lines
         trace['opacity'] = 0.65
         trace['name'] = format_group_name(trace['name'])  # Format group names
 
-    return fig
+    return fig, grouped_data
 
 
 # Load the data
@@ -146,8 +152,8 @@ with col2:
 if start_date > end_date:
     st.error("Start date must be before or equal to the end date.")
 
-# Group Selection and Metric Toggle in the same row
-col1, col2 = st.columns(2)
+# Group Selection, Metric Toggle, and Aggregation in the same row
+col1, col2, col3 = st.columns(3)
 
 with col1:
     original_groups = [
@@ -167,19 +173,67 @@ with col2:
         horizontal=True
     )
 
-# Create two plots: one for Pro Palestine and one for Pro Israel
-st.subheader("Protests Visualization")
+with col3:
+    aggregation = st.radio(
+        "Select Aggregation",
+        ['Week', 'Month'],
+        horizontal=True
+    )
 
+col1, col2 = st.columns(2)
+
+# Plot for Pro Palestine
+palestine_plot, grouped_data_p = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, aggregation, pro_palestine=True)
+
+# Plot for Pro Israel
+israel_plot, grouped_data_i = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, aggregation, pro_palestine=False)
+
+# Corrected code to get the maximum y-value for the selected metric
+y_column = 'num_protests' if metric == 'Number of Protests' else 'total_crowd'
+
+# Get the maximum y-value between the two plots (based on the metric)
+y_max = max(grouped_data_p[y_column].max(), grouped_data_i[y_column].max())
+
+# Set the same y-axis limit for both plots
+palestine_plot.update_layout(yaxis=dict(range=[0, y_max]))
+israel_plot.update_layout(yaxis=dict(range=[0, y_max]))
+
+palestine_plot.update_layout(
+    yaxis=dict(
+        range=[0, y_max],
+        showgrid=True,  # Enable grid lines
+        gridcolor='lightgray',  # Set the color of the grid lines
+        gridwidth=0.5  # Set the width of the grid lines
+    ),
+    xaxis=dict(
+        showgrid=True,  # Enable grid lines
+        gridcolor='lightgray',  # Set the color of the grid lines
+        gridwidth=0.5  # Set the width of the grid lines
+    )
+)
+
+israel_plot.update_layout(
+    yaxis=dict(
+        range=[0, y_max],
+        showgrid=True,  # Enable grid lines
+        gridcolor='lightgray',  # Set the color of the grid lines
+        gridwidth=0.5  # Set the width of the grid lines
+    ),
+    xaxis=dict(
+        showgrid=True,  # Enable grid lines
+        gridcolor='lightgray',  # Set the color of the grid lines
+        gridwidth=0.5  # Set the width of the grid lines
+    )
+)
+
+
+# Display both plots side by side
 col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Pro Palestine Protests")
-    # Plot for Pro Palestine
-    palestine_plot = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, pro_palestine=True)
     st.plotly_chart(palestine_plot, use_container_width=True)
 
 with col2:
     st.subheader("Pro Israel Protests")
-    # Plot for Pro Israel
-    israel_plot = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, pro_palestine=False)
     st.plotly_chart(israel_plot, use_container_width=True)
