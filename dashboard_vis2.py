@@ -1,10 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import numpy as np
-from natsort import index_natsorted
 from datetime import timedelta, datetime
 
 # Set page configuration to wide layout
@@ -14,12 +10,12 @@ st.set_page_config(page_title="Data Visualisation", layout="wide")
 @st.cache_data
 def load_data():
     # Load the dataset
-    data = pd.read_csv('protests us final.csv')
+    data = pd.read_csv('/Users/ofekzini/Documents/Data Engineering/Fall 2024/ויזואליזציה/Project/protests us final.csv')
 
     # Parse dates correctly
     data['event_date'] = pd.to_datetime(data['event_date'], dayfirst=True)
 
-    # Replace -1 in the 'crowd_size' column with a default value (e.g., 0 or 1)
+    # Replace -1 in the 'Crowd_size' column with a default value (e.g., 0 or 1)
     data['Crowd_size'] = data['Crowd_size'].apply(lambda x: max(x, 0))
 
     # Assign colors based on protest type
@@ -30,54 +26,69 @@ def load_data():
         axis=1
     )
 
-    # data = data.loc[~((data['Pro Israel'] == 0) & (data['Pro Palestine'] == 0))]
-
+    # Filter for data in the United States
     data = data[data['country'] == 'United States']
 
     return data
 
+def visualize_line_plot(df, start_date, end_date, selected_groups):
+    # Convert start_date and end_date to datetime, and normalize to ensure both are at the start of the day
+    start_date = pd.to_datetime(start_date).normalize()
+    end_date = pd.to_datetime(end_date).normalize()
 
-def visualize_protests(df, selected_date_range, selected_groups):
-    # Filter data based on selected date range
+    # Filter data by the selected date range
     filtered_df = df[
-        (df['event_date'] >= pd.to_datetime(selected_date_range[0])) &
-        (df['event_date'] <= pd.to_datetime(selected_date_range[1]))
+        (df['event_date'] >= start_date) &
+        (df['event_date'] <= end_date)
     ]
 
-    # Filter data based on selected groups
+    # Filter data based on the selected groups
     if selected_groups:
         group_filter = filtered_df[selected_groups].sum(axis=1) > 0
         filtered_df = filtered_df[group_filter]
 
-    # Update crowd_size to "Not reported" if it is 0
-    filtered_df['Crowd_size'] = filtered_df['Crowd_size'].apply(lambda x: "Not reported" if x == 0 else x)
-
-    # USA Map Visualization
-    fig = px.scatter_mapbox(
-        filtered_df,
-        lat="latitude",
-        lon="longitude",
-        size=None,  # Remove size dependency
-        color="color",  # Use the custom color column
-        hover_name="location",
-        hover_data=["admin1", "Crowd_size", "event_date"],  # Only show state name, crowd size, and date
-        zoom=3,
-        mapbox_style="carto-positron",
-        height=800  # Increased map size
+    # Melt the data for easier grouping and visualization
+    melted_df = filtered_df.melt(
+        id_vars=['event_date', 'Crowd_size'],
+        value_vars=selected_groups,
+        var_name='group',
+        value_name='count'
     )
 
-    if filtered_df.empty:
-        st.write("No data to display for the selected filters. Showing empty map.")
-        fig = px.scatter_mapbox(
-            pd.DataFrame({"latitude": [], "longitude": []}),  # Empty map
-            lat="latitude",
-            lon="longitude",
-            zoom=3,
-            mapbox_style="carto-positron",
-            height=800
-        )
+    # Keep only rows where 'count' is 1 (indicating a protest for the group)
+    melted_df = melted_df[melted_df['count'] == 1]
 
-    # Display the map
+    # Group by month and group type, summing the number of protests and the crowd size
+    melted_df['month'] = melted_df['event_date'].dt.to_period('M')
+    grouped_data = melted_df.groupby(['month', 'group']).agg(
+        num_protests=('count', 'size'),
+        total_crowd=('Crowd_size', 'sum')
+    ).reset_index()
+
+    # Convert 'month' back to datetime for plotting
+    grouped_data['month'] = grouped_data['month'].dt.to_timestamp()
+
+    # Create the line plot
+    fig = px.line(
+        grouped_data,
+        x='month',
+        y='num_protests',
+        color='group',
+        line_group='group',
+        line_shape='linear',
+        title='Number of Protests by Group Over Time',
+        labels={'month': 'Month', 'num_protests': 'Number of Protests', 'group': 'Group'},
+        width=900,
+        height=500
+    )
+
+    # Adjust line width based on the total crowd size
+    for trace in fig.data:
+        group = trace.name
+        trace_data = grouped_data[grouped_data['group'] == group]
+        trace['line']['width'] = trace_data['total_crowd'].max() / 1000  # Scale for better visualization
+
+    # Display the plot
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -87,18 +98,29 @@ protests_df = load_data()
 # Streamlit App
 st.title("Protest Visualization in the USA")
 
-# Date Range Selection
-min_date = protests_df['event_date'].min().date()  # Convert to datetime.date
-max_date = protests_df['event_date'].max().date()  # Convert to datetime.date
-
+# Sidebar: Date Range Selection using two date inputs
 st.sidebar.header("Filter Options")
-selected_date_range = st.sidebar.slider(
-    "Select Date Range",
+
+min_date = protests_df['event_date'].min().date()
+max_date = protests_df['event_date'].max().date()
+
+start_date = st.sidebar.date_input(
+    "Start Date (First day of month)",
+    value=min_date,
     min_value=min_date,
-    max_value=max_date,
-    value=(min_date, max_date),
-    format="YYYY-MM-DD"
+    max_value=max_date
 )
+
+end_date = st.sidebar.date_input(
+    "End Date (Last day of month)",
+    value=max_date,
+    min_value=min_date,
+    max_value=max_date
+)
+
+# Ensure start_date is before end_date
+if start_date > end_date:
+    st.sidebar.error("Start date must be before or equal to the end date.")
 
 # Group Selection
 groups = [
@@ -107,7 +129,5 @@ groups = [
 ]
 selected_groups = st.sidebar.multiselect("Select Groups to Display", groups, default=groups)
 
-# Call the function to visualize the protests
-visualize_protests(protests_df, selected_date_range, selected_groups)
-
-
+# Call the function to visualize the line plot
+visualize_line_plot(protests_df, start_date, end_date, selected_groups)
