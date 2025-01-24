@@ -29,6 +29,11 @@ def load_data():
         ),
         axis=1
     )
+
+    # data = data.loc[~((data['Pro Israel'] == 0) & (data['Pro Palestine'] == 0))]
+
+    data = data[data['country'] == 'United States']
+
     return data
 
 
@@ -43,6 +48,9 @@ def visualize_protests(df, selected_date_range, selected_groups):
     if selected_groups:
         group_filter = filtered_df[selected_groups].sum(axis=1) > 0
         filtered_df = filtered_df[group_filter]
+
+    # Update crowd_size to "Not reported" if it is 0
+    filtered_df['Crowd_size'] = filtered_df['Crowd_size'].apply(lambda x: "Not reported" if x == 0 else x)
 
     # USA Map Visualization
     fig = px.scatter_mapbox(
@@ -72,6 +80,7 @@ def visualize_protests(df, selected_date_range, selected_groups):
     # Display the map
     st.plotly_chart(fig, use_container_width=True)
 
+
 # Load the data
 protests_df = load_data()
 
@@ -100,3 +109,5 @@ selected_groups = st.sidebar.multiselect("Select Groups to Display", groups, def
 
 # Call the function to visualize the protests
 visualize_protests(protests_df, selected_date_range, selected_groups)
+
+
