@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 import plotly.express as px
 from datetime import timedelta, datetime
 
@@ -31,21 +32,22 @@ def load_data():
 
     return data
 
-def visualize_line_plot(df, start_date, end_date, selected_groups):
+def visualize_line_plot(df, start_date, end_date, selected_groups, pro_palestine=True):
+    # Filter based on Pro Palestine or Pro Israel
+    if pro_palestine:
+        filtered_df = df[df['Pro Palestine'] == 1]
+    else:
+        filtered_df = df[df['Pro Israel'] == 1]
+
     # Convert start_date and end_date to datetime, and normalize to ensure both are at the start of the day
     start_date = pd.to_datetime(start_date).normalize()
     end_date = pd.to_datetime(end_date).normalize()
 
     # Filter data by the selected date range
-    filtered_df = df[
-        (df['event_date'] >= start_date) &
-        (df['event_date'] <= end_date)
+    filtered_df = filtered_df[
+        (filtered_df['event_date'] >= start_date) &
+        (filtered_df['event_date'] <= end_date)
     ]
-
-    # Filter data based on the selected groups
-    if selected_groups:
-        group_filter = filtered_df[selected_groups].sum(axis=1) > 0
-        filtered_df = filtered_df[group_filter]
 
     # Melt the data for easier grouping and visualization
     melted_df = filtered_df.melt(
@@ -72,24 +74,23 @@ def visualize_line_plot(df, start_date, end_date, selected_groups):
     fig = px.line(
         grouped_data,
         x='month',
-        y='num_protests',
+        y='total_crowd',  # Y-axis as total protestors
         color='group',
         line_group='group',
         line_shape='linear',
-        title='Number of Protests by Group Over Time',
-        labels={'month': 'Month', 'num_protests': 'Number of Protests', 'group': 'Group'},
+        title='Protestors by Group Over Time',
+        labels={'month': 'Month', 'total_crowd': 'Total Protestors', 'group': 'Group'},
         width=900,
         height=500
     )
 
-    # Adjust line width based on the total crowd size
+    # Adjust line width based on the number of protests in that month
     for trace in fig.data:
         group = trace.name
         trace_data = grouped_data[grouped_data['group'] == group]
-        trace['line']['width'] = trace_data['total_crowd'].max() / 1000  # Scale for better visualization
+        trace['line']['width'] = trace_data['num_protests'].max() / 10  # Scale for better visibility
 
-    # Display the plot
-    st.plotly_chart(fig, use_container_width=True)
+    return fig
 
 
 # Load the data
@@ -129,5 +130,17 @@ groups = [
 ]
 selected_groups = st.sidebar.multiselect("Select Groups to Display", groups, default=groups)
 
-# Call the function to visualize the line plot
-visualize_line_plot(protests_df, start_date, end_date, selected_groups)
+# Create two plots: one for Pro Palestine and one for Pro Israel
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Pro Palestine Protests")
+    # Plot for Pro Palestine
+    palestine_plot = visualize_line_plot(protests_df, start_date, end_date, selected_groups, pro_palestine=True)
+    st.plotly_chart(palestine_plot, use_container_width=True)
+
+with col2:
+    st.subheader("Pro Israel Protests")
+    # Plot for Pro Israel
+    israel_plot = visualize_line_plot(protests_df, start_date, end_date, selected_groups, pro_palestine=False)
+    st.plotly_chart(israel_plot, use_container_width=True)
