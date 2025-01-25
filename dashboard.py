@@ -176,14 +176,29 @@ def plot_chronological_analysis(data, selected_state):
 
 
 # Layout
-st.title("Protests in the USA")
+st.title("PROTESTS IN THE USA FOLLOWING THE EVENTS OF OCTOBER 7TH, 2023")
+st.text("""
+    \nThis dashboard provides an overview of protests in the United States following the events of October 7th, 2023. The data includes Pro-Israeli and Pro-Palestinian protests analysis since October 7th, 2023 till November 8th, 2024.
+    In this dashboard we aimed to provide answers to the following questions:\n
+    \t1. Where are the protests happening in the USA? Cross state analysis
+    \t2. What types of groups are protesting? (Political groups, LGBT, Students, etc..)
+    \t3. Do people protest more frequently around meaningful events?
+    \t4. What are the ratios of violent protests to peaceful protests?
+    """)
+
+st.subheader("Protests Locations over the USA")  # subheader
+st.text(
+    "Every point on the map represents a protest event. Hover over the points to see more details about the event."
+    " You can filter the map by selecting a specific state from the selection box on the right side of the dashboard.\n"
+    "If you wish, you can also filter the map to present only Pro-Isaeli or Pro-Palestinian protests by clicking on the legend.\n"
+    "On the right side of the dashboard, you can see the number of protests occouring by month for the selected state of your choosing.")
 
 # Create a two-column layout with adjusted widths
 col1, col2 = st.columns([3, 2])  # col1 (map) is wider, col2 (plots) is narrower
 
 # State selection bar and time-series charts on the right (col2)
 with col2:
-    st.subheader("State Selection and Chronological Analysis")  # subheader
+    # st.subheader("Protests Locations over the USA")  # subheader
 
     # Custom CSS to adjust the width of the selectbox to 50%
     st.markdown("""
@@ -208,7 +223,12 @@ with col2:
 
 # Map on the left (col1)
 with col1:
-    st.subheader("USA Map of Protests")  # subheader
+    # st.subheader("Protests Locations over the USA")  # subheader
+    # st.text(
+    #     "Every point on the map represents a protest event. Hover over the points to see more details about the event."
+    #     " You can filter the map by selecting a specific state from the selection box on the right side of the dashboard."
+    #     " If you wish, you can choose to present only Pro-Isaeli or Pro-Palestinian protests by clicking on the legend.\n"
+    #     "On the right side of the dashboard, you can see the number of protests occouring by month for the selected state of your choosing.")
     # print in terminal the selected state
     usa_map = plot_usa_map(protests_df, selected_state)
     st.plotly_chart(usa_map, use_container_width=True, height=700)  # Larger map height
