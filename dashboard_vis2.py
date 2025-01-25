@@ -90,6 +90,12 @@ def visualize_line_plot(df, start_date, end_date, selected_groups, metric, aggre
     y_axis = 'num_protests' if metric == 'Number of Protests' else 'total_crowd'
     y_label = 'Number of Protests' if metric == 'Number of Protests' else 'Number of Protesters'
 
+    # Define color mapping for the selected groups
+    selected_colors = {
+        group: original_groups_with_colors[group]
+        for group in selected_groups
+    }
+
     # Create the line plot
     fig = px.line(
         grouped_data,
@@ -104,6 +110,7 @@ def visualize_line_plot(df, start_date, end_date, selected_groups, metric, aggre
             y_axis: y_label,
             'group': 'Group'
         },
+        color_discrete_map=selected_colors,  # Use the fixed color mapping
         width=900,
         height=500
     )
@@ -116,6 +123,18 @@ def visualize_line_plot(df, start_date, end_date, selected_groups, metric, aggre
 
     return fig, grouped_data
 
+
+# Define the original groups and their associated colors
+original_groups_with_colors = {
+    "palestenian_group": "#D41D1F",
+    "jewish_group": "#1C528F",
+    "students_group": "#D34611",
+    "teachers_group": "#F1CD00",
+    "women_group": "#3B2C6A",
+    "political_group": "#1B2E1B",
+    "lgbt_group": "#F6478A",
+    "other_group": "#3A3333"
+}
 
 # Load the data
 protests_df = load_data()
@@ -130,11 +149,11 @@ st.subheader("Filter Options")
 min_date = protests_df['event_date'].min().date()
 max_date = protests_df['event_date'].max().date()
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     start_date = st.date_input(
-        "Start Date (First day of month)",
+        "Start Date",
         value=min_date,
         min_value=min_date,
         max_value=max_date
@@ -142,7 +161,7 @@ with col1:
 
 with col2:
     end_date = st.date_input(
-        "End Date (Last day of month)",
+        "End Date",
         value=max_date,
         min_value=min_date,
         max_value=max_date
@@ -156,12 +175,12 @@ if start_date > end_date:
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    original_groups = [
-        "palestenian_group", "jewish_group", "students_group", "teachers_group",
-        "women_group", "political_group", "lgbt_group", "other_group"
-    ]
-    display_groups = [format_group_name(group) for group in original_groups]
-    selected_display_groups = st.multiselect("Select Groups to Display", display_groups, default=display_groups)
+    select_all = st.checkbox("Select All Groups", value=True)
+    display_groups = [format_group_name(group) for group in original_groups_with_colors.keys()]
+    if select_all:
+        selected_display_groups = st.multiselect("Groups", display_groups, default=display_groups)
+    else:
+        selected_display_groups = st.multiselect("Groups", display_groups, default=[])
 
     # Map back to original group names for processing
     selected_groups = [inverse_format_group_name(group) for group in selected_display_groups]
@@ -180,52 +199,19 @@ with col3:
         horizontal=True
     )
 
-col1, col2 = st.columns(2)
-
 # Plot for Pro Palestine
 palestine_plot, grouped_data_p = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, aggregation, pro_palestine=True)
 
 # Plot for Pro Israel
 israel_plot, grouped_data_i = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, aggregation, pro_palestine=False)
 
-# Corrected code to get the maximum y-value for the selected metric
+# Get the maximum y-value between the two plots
 y_column = 'num_protests' if metric == 'Number of Protests' else 'total_crowd'
-
-# Get the maximum y-value between the two plots (based on the metric)
 y_max = max(grouped_data_p[y_column].max(), grouped_data_i[y_column].max())
 
 # Set the same y-axis limit for both plots
 palestine_plot.update_layout(yaxis=dict(range=[0, y_max]))
 israel_plot.update_layout(yaxis=dict(range=[0, y_max]))
-
-palestine_plot.update_layout(
-    yaxis=dict(
-        range=[0, y_max],
-        showgrid=True,  # Enable grid lines
-        gridcolor='lightgray',  # Set the color of the grid lines
-        gridwidth=0.5  # Set the width of the grid lines
-    ),
-    xaxis=dict(
-        showgrid=True,  # Enable grid lines
-        gridcolor='lightgray',  # Set the color of the grid lines
-        gridwidth=0.5  # Set the width of the grid lines
-    )
-)
-
-israel_plot.update_layout(
-    yaxis=dict(
-        range=[0, y_max],
-        showgrid=True,  # Enable grid lines
-        gridcolor='lightgray',  # Set the color of the grid lines
-        gridwidth=0.5  # Set the width of the grid lines
-    ),
-    xaxis=dict(
-        showgrid=True,  # Enable grid lines
-        gridcolor='lightgray',  # Set the color of the grid lines
-        gridwidth=0.5  # Set the width of the grid lines
-    )
-)
-
 
 # Display both plots side by side
 col1, col2 = st.columns(2)
