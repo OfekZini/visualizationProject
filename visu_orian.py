@@ -59,8 +59,12 @@ def app():
         date_options.append(f"{formatted_date} - {row['Event']}")
 
     # Title and description
-    st.title("Protests in North America")
-    st.markdown("Explore protest trends during the Israel–Hamas war.")
+    st.title("Major extreme events in light of October 7")
+    st.markdown("Visualization Explanation
+This dashboard provides a visual comparison of protests and related events across USA, focusing on the period surrounding October 7th. Users can explore trends in pro-Palestinian and pro-Israeli protests, understand the context of key events, and examine the demographics, crowd sizes, and violence levels associated with the protests.For each selected date, a stacked bar chart displays the number of protests in a ±10-day window. User Instructions-Event Selection:
+
+Choose two events or dates for comparison using the dropdown menus or select custom dates within the specified range.
+The "Predefined Events" option provides significant dates with context, while "Custom Date" allows manual input. ")
 
     # Function to create date input with specific range
     def custom_date_input(label, key, default_date=None):
