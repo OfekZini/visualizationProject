@@ -145,11 +145,22 @@ def app():
     protests_df = load_data()
 
     # Streamlit App
-    st.title("Protest Visualization in the USA")
+    st.title("Who Are The Protestors?")
 
     # Selection Options: Displayed above the plots
-    st.subheader("Filter Options")
+    st.markdown("""  
+    This page focuses on **groups of protestors** in USA, providing the trendlines aggregated by week/month showcasing 
+    different protest groups over a selected period of time.
+    """)
 
+    st.subheader("How To Use:")
+    st.markdown("""
+    - Select the groups of protestors you wish to visualize, enter the start date and end date.
+    - Select whether you'd like to visualize the amount of protests or the amount of protestors.
+    - Select the time resolution (week or month). 
+    """)
+
+    st.subheader("Filter Options")
     # Date Range Selection
     min_date = protests_df['event_date'].min().date()
     max_date = protests_df['event_date'].max().date()
@@ -192,14 +203,14 @@ def app():
 
     with col2:
         metric = st.radio(
-            "Select Metric to Display",
+            "Show:",
             ['Number of Protests', 'Number of Protesters'],
             horizontal=True
         )
 
     with col3:
         aggregation = st.radio(
-            "Select Aggregation",
+            "Resolution:",
             ['Week', 'Month'],
             horizontal=True
         )

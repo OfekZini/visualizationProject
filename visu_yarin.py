@@ -11,6 +11,7 @@ def app():
     # Set page configuration to wide layout
     # st.set_page_config(page_title="Data Visualisation", layout="wide")
 # Load the datasets
+    # Load the datasets
     @st.cache_data
     def load_data():
         protests_df = pd.read_csv(r'protests us final.csv')
@@ -24,7 +25,20 @@ def app():
     timeline_df['Date'] = pd.to_datetime(timeline_df['Date'], dayfirst=True)
 
     # Title
-    st.title("Protests in North America")
+    st.title("Violent Protests in North America")
+
+    st.markdown("""  
+    This page focuses on **violent protests** in USA, providing insights into:  
+    - Violent protesters over time and group distributions.  
+    - The scale of violent vs. non-violent protests.  
+    - Crowd size distribution and highlights of the two largest events.
+
+    ⚠️ **Key Insight:**  
+    1. **Insights:** These are calculated and displayed either for an **individual group** (if one group is selected) or a **summary of all selected groups** (if multiple groups are chosen).  
+    2. **Visualizations:** These dynamically adjust to show data for all the groups selected in the filters, reflecting the combined data for those groups.
+    3. **Important:** Pay attention to the **X-axis** and **Y-axis** scaling as it can vary significantly between groups due to differences in the number of protests and protesters.  
+
+    """)
 
     # Create multi-select for protest types
     st.subheader("Select protest types to visualize:")
@@ -39,7 +53,7 @@ def app():
     # Colors for different protest types
     colors = {
         "Pro Palestine": "#FF0000",  # Red
-        "Pro Israel": "#0000FF",    # Blue
+        "Pro Israel": "#0000FF",  # Blue
         "Pro Israel & Pro Palestine": "#800080"  # Purple
     }
 
@@ -124,6 +138,8 @@ def app():
             violent_protests = len(filtered_df[filtered_df['Violent'] == 1])
             non_violent_protests = len(filtered_df) - violent_protests
 
+            violent_df = filtered_df[filtered_df['Violent'] == 1]
+
             # Horizontal stacked bar plot
             fig_violent = go.Figure()
             fig_violent.add_trace(go.Bar(
@@ -152,7 +168,7 @@ def app():
                 xaxis_title="Number of Protests",
                 yaxis_title="",
                 template="plotly_white",
-                xaxis=dict(showgrid=False,showticklabels=False),
+                xaxis=dict(showgrid=False, showticklabels=False),
                 yaxis=dict(showgrid=False)
             )
             st.plotly_chart(fig_violent, use_container_width=True)
@@ -165,16 +181,16 @@ def app():
             ]
             group_colors = {
                 'palestenian_group': "#FF0000",  # Red
-                'jewish_group': "#0000FF",      # Blue
-                'students_group': "#800080",    # Purple
-                'teachers_group': "#FFFF00",    # Yellow
-                'women_group': "#00FF00",       # Green
-                'political_group': "#FFA500",   # Orange
-                'lgbt_group': "#FFC0CB",        # Pink
-                'other_group': "#808080"        # Grey
+                'jewish_group': "#0000FF",  # Blue
+                'students_group': "#800080",  # Purple
+                'teachers_group': "#FFFF00",  # Yellow
+                'women_group': "#00FF00",  # Green
+                'political_group': "#FFA500",  # Orange
+                'lgbt_group': "#FFC0CB",  # Pink
+                'other_group': "#808080"  # Grey
             }
 
-            group_counts = {group: filtered_df[group].sum() for group in groups if group in filtered_df.columns}
+            group_counts = {group: violent_df[group].sum() for group in groups if group in violent_df.columns}
             group_totals = sum(group_counts.values())
 
             # Combine groups with <10% into "Other"
@@ -213,8 +229,8 @@ def app():
                 xaxis_title="Percentage (%)",
                 yaxis_title="",
                 template="plotly_white",
-                xaxis=dict(showgrid=False),
-                yaxis=dict(showgrid=False,showticklabels=False),
+                xaxis=dict(showgrid=False, showticklabels=False),
+                yaxis=dict(showgrid=False),
                 showlegend=False  # Disable legend
             )
             st.plotly_chart(fig_groups, use_container_width=True)
@@ -227,9 +243,12 @@ def app():
             total_protests = len(violent_protests_df)
 
             # Count how many protests were for each type
-            pro_palestine_count = len(violent_protests_df[(violent_protests_df['Pro Palestine'] == 1) & (violent_protests_df['Pro Israel'] == 0) & (violent_protests_df['Violent'] == 1)])
-            pro_israel_count = len(violent_protests_df[(violent_protests_df['Pro Israel'] == 1) & (violent_protests_df['Pro Palestine'] == 0) & (violent_protests_df['Violent'] == 1)])
-            both_count = len(violent_protests_df[(violent_protests_df['Pro Palestine'] == 1) & (violent_protests_df['Pro Israel'] == 1) & (violent_protests_df['Violent'] == 1)])
+            pro_palestine_count = len(violent_protests_df[(violent_protests_df['Pro Palestine'] == 1) & (
+                        violent_protests_df['Pro Israel'] == 0) & (violent_protests_df['Violent'] == 1)])
+            pro_israel_count = len(violent_protests_df[(violent_protests_df['Pro Israel'] == 1) & (
+                        violent_protests_df['Pro Palestine'] == 0) & (violent_protests_df['Violent'] == 1)])
+            both_count = len(violent_protests_df[(violent_protests_df['Pro Palestine'] == 1) & (
+                        violent_protests_df['Pro Israel'] == 1) & (violent_protests_df['Violent'] == 1)])
 
             # Calculate percentages
             pro_palestine_pct = (pro_palestine_count / total_protests) * 100
@@ -359,15 +378,15 @@ def app():
             if pro_palestine:
                 filtered_data = pd.concat([filtered_data, protests_df[
                     (protests_df['Pro Palestine'] == 1) & (protests_df['Violent'] == 1) & (
-                                protests_df['Pro Israel'] == 0)]])
+                            protests_df['Pro Israel'] == 0)]])
             if pro_israel:
                 filtered_data = pd.concat([filtered_data, protests_df[
                     (protests_df['Pro Israel'] == 1) & (protests_df['Violent'] == 1) & (
-                                protests_df['Pro Palestine'] == 0)]])
+                            protests_df['Pro Palestine'] == 0)]])
             if both:
                 filtered_data = pd.concat([filtered_data, protests_df[
                     (protests_df['Pro Palestine'] == 1) & (protests_df['Pro Israel'] == 1) & (
-                                protests_df['Violent'] == 1)]])
+                            protests_df['Violent'] == 1)]])
 
             if not filtered_data.empty:
                 # Group data by date and sum crowd sizes

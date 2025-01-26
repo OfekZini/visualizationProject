@@ -8,10 +8,10 @@ st.set_page_config(page_title="Data Visualisation", layout="wide")
 
 # Page options
 pages = {
-    "Overview": visu_shahaf,
-    "Protest Visualisation": dashboard_vis2,
-    "North America Protests": visu_orian,
-    "Protest Insights": visu_yarin
+    "Protests Overview": visu_shahaf,
+    "Who are the protestors": dashboard_vis2,
+    "Significant Events": visu_orian,
+    "Violent Protests Deep Dive": visu_yarin
 }
 
 # Sidebar menu
