@@ -175,23 +175,48 @@ def plot_chronological_analysis(data, selected_state):
     return fig1, fig2
 
 
-# Layout
-st.title("PROTESTS IN THE USA FOLLOWING THE EVENTS OF OCTOBER 7TH, 2023")
-st.text("""
-    \nThis dashboard provides an overview of protests in the United States following the events of October 7th, 2023. The data includes Pro-Israeli and Pro-Palestinian protests analysis since October 7th, 2023 till November 8th, 2024.
-    In this dashboard we aimed to provide answers to the following questions:\n
-    \t1. Where are the protests happening in the USA? Cross state analysis
-    \t2. What types of groups are protesting? (Political groups, LGBT, Students, etc..)
-    \t3. Do people protest more frequently around meaningful events?
-    \t4. What are the ratios of violent protests to peaceful protests?
-    """)
+st.title("📊 Protests in the USA: October 7th, 2023, and Beyond")
 
-st.subheader("Protests Locations over the USA")  # subheader
-st.text(
-    "Every point on the map represents a protest event. Hover over the points to see more details about the event."
-    " You can filter the map by selecting a specific state from the selection box on the right side of the dashboard.\n"
-    "If you wish, you can also filter the map to present only Pro-Isaeli or Pro-Palestinian protests by clicking on the legend.\n"
-    "On the right side of the dashboard, you can see the number of protests occouring by month for the selected state of your choosing.")
+st.markdown("""
+<style>
+    .main-title { font-size: 28px; font-weight: bold; text-align: center; }
+    .section-title { font-size: 20px; font-weight: bold; margin-top: 20px; }
+    .highlight { color: #FF5733; font-weight: bold; }
+    .info-text { font-size: 16px; line-height: 1.6; margin-top: 10px; }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown('<p class="main-title">This dashboard offers a comprehensive analysis of protests in the United States.</p>', unsafe_allow_html=True)
+
+st.markdown("""
+<div class="info-text">
+The data covers both <span class="highlight">Pro-Israeli</span> and <span class="highlight">Pro-Palestinian</span> protests from 
+October 7th, 2023, to November 8th, 2024.
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('<p class="section-title">Key Questions Explored:</p>', unsafe_allow_html=True)
+st.markdown("""
+- Where are the protests happening? (State-by-state analysis)
+- What types of groups are involved? (Political groups, LGBTQ+, students, etc.)
+- Are protests more frequent around significant events?
+- What is the ratio of violent protests to peaceful ones?
+""")
+
+st.markdown('<p class="section-title">Protest Locations Across the USA</p>', unsafe_allow_html=True)
+st.markdown("""
+<div class="info-text">
+Each point on the map represents a protest event. Hover over a point to view detailed event information.
+</div>
+
+<div class="info-text">
+Features of the map:
+- Use the <span class="highlight">state selection box</span> (on the right) to filter protests by state.
+- Toggle between <span class="highlight">Pro-Israeli</span> and <span class="highlight">Pro-Palestinian</span> protests using the legend.
+- View monthly protest counts for a selected state on the right side of the dashboard.
+</div>
+""", unsafe_allow_html=True)
+
 
 # Create a two-column layout with adjusted widths
 col1, col2 = st.columns([3, 2])  # col1 (map) is wider, col2 (plots) is narrower
