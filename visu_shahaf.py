@@ -174,9 +174,49 @@ def app():
 
         return fig1, fig2
 
+    st.title("📊 Protests in the USA: October 7th, 2023, and Beyond")
 
-    # Layout
-    st.title("Protests in the USA")
+    st.markdown("""
+    <style>
+        .main-title { font-size: 28px; font-weight: bold; text-align: center; }
+        .section-title { font-size: 20px; font-weight: bold; margin-top: 20px; }
+        .highlight { color: #FF5733; font-weight: bold; }
+        .info-text { font-size: 16px; line-height: 1.6; margin-top: 10px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(
+        '<p class="main-title">This dashboard offers a comprehensive analysis of protests in the United States.</p>',
+        unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="info-text">
+    The data covers both <span class="highlight">Pro-Israeli</span> and <span class="highlight">Pro-Palestinian</span> protests from 
+    October 7th, 2023, to November 8th, 2024.
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<p class="section-title">Key Questions Explored:</p>', unsafe_allow_html=True)
+    st.markdown("""
+    - Where are the protests happening? (State-by-state analysis)
+    - What types of groups are involved? (Political groups, LGBTQ+, students, etc.)
+    - Are protests more frequent around significant events?
+    - What is the ratio of violent protests to peaceful ones?
+    """)
+
+    st.markdown('<p class="section-title">Protest Locations Across the USA</p>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="info-text">
+    Each point on the map represents a protest event. Hover over a point to view detailed event information.
+    </div>
+
+    <div class="info-text">
+    Features of the map:
+    - Use the <span class="highlight">state selection box</span> (on the right) to filter protests by state.
+    - Toggle between <span class="highlight">Pro-Israeli</span> and <span class="highlight">Pro-Palestinian</span> protests using the legend.
+    - View monthly protest counts for a selected state on the right side of the dashboard.
+    </div>
+    """, unsafe_allow_html=True)
 
     # Create a two-column layout with adjusted widths
     col1, col2 = st.columns([3, 2])  # col1 (map) is wider, col2 (plots) is narrower

@@ -123,7 +123,7 @@ def app():
         # Adjust line width and opacity for all traces
         for trace in fig.data:
             trace['line']['width'] = 5  # Slightly thicker lines
-            trace['opacity'] = 0.65
+            trace['opacity'] = 0.7
             trace['name'] = format_group_name(trace['name'])  # Format group names
 
         return fig, grouped_data
@@ -131,8 +131,8 @@ def app():
 
     # Define the original groups and their associated colors
     original_groups_with_colors = {
-        "palestenian_group": "#D41D1F",
-        "jewish_group": "#1C528F",
+        "palestenian_group": "#FF0000",
+        "jewish_group": "#0000FF",
         "students_group": "#D34611",
         "teachers_group": "#F1CD00",
         "women_group": "#3B2C6A",
@@ -160,14 +160,18 @@ def app():
     - Select the time resolution (week or month). 
     """)
 
+    # Filter Options
     st.subheader("Filter Options")
-    # Date Range Selection
+
+    # Define date range for selection
     min_date = protests_df['event_date'].min().date()
     max_date = protests_df['event_date'].max().date()
 
-    col1, col2, col3 = st.columns(3)
+    # Create a row with columns where the group selection is wider
+    col1, col2, col3, col4, col5 = st.columns([1, 1, 3, 1, 1])
 
     with col1:
+        # Start date picker
         start_date = st.date_input(
             "Start Date",
             value=min_date,
@@ -176,6 +180,7 @@ def app():
         )
 
     with col2:
+        # End date picker
         end_date = st.date_input(
             "End Date",
             value=max_date,
@@ -187,33 +192,95 @@ def app():
     if start_date > end_date:
         st.error("Start date must be before or equal to the end date.")
 
-    # Group Selection, Metric Toggle, and Aggregation in the same row
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        select_all = st.checkbox("Select All Groups", value=True)
+    with col3:
+        # Group selection
         display_groups = [format_group_name(group) for group in original_groups_with_colors.keys()]
+
+        # Multi-select dropdown for groups
+        selected_display_groups = st.multiselect(
+            "Groups",
+            display_groups,
+            default=display_groups
+        )
+
+        # Checkbox for "Select All Groups" below the dropdown
+        select_all = st.checkbox("Select All Groups", value=True, help="Check this to select all groups.")
+
         if select_all:
-            selected_display_groups = st.multiselect("Groups", display_groups, default=display_groups)
-        else:
-            selected_display_groups = st.multiselect("Groups", display_groups, default=[])
+            selected_display_groups = display_groups
 
         # Map back to original group names for processing
         selected_groups = [inverse_format_group_name(group) for group in selected_display_groups]
 
-    with col2:
+    with col4:
+        # Metric selection
         metric = st.radio(
             "Show:",
             ['Number of Protests', 'Number of Protesters'],
             horizontal=True
         )
 
-    with col3:
+    with col5:
+        # Aggregation selection
         aggregation = st.radio(
             "Resolution:",
             ['Week', 'Month'],
             horizontal=True
         )
+    # st.subheader("Filter Options")
+    # # Date Range Selection
+    # min_date = protests_df['event_date'].min().date()
+    # max_date = protests_df['event_date'].max().date()
+    #
+    # col1, col2, col3 = st.columns(3)
+    #
+    # with col1:
+    #     start_date = st.date_input(
+    #         "Start Date",
+    #         value=min_date,
+    #         min_value=min_date,
+    #         max_value=max_date
+    #     )
+    #
+    # with col2:
+    #     end_date = st.date_input(
+    #         "End Date",
+    #         value=max_date,
+    #         min_value=min_date,
+    #         max_value=max_date
+    #     )
+    #
+    # # Ensure start_date is before end_date
+    # if start_date > end_date:
+    #     st.error("Start date must be before or equal to the end date.")
+    #
+    # # Group Selection, Metric Toggle, and Aggregation in the same row
+    # col1, col2, col3 = st.columns(3)
+    #
+    # with col1:
+    #     select_all = st.checkbox("Select All Groups", value=True)
+    #     display_groups = [format_group_name(group) for group in original_groups_with_colors.keys()]
+    #     if select_all:
+    #         selected_display_groups = st.multiselect("Groups", display_groups, default=display_groups)
+    #     else:
+    #         selected_display_groups = st.multiselect("Groups", display_groups, default=[])
+    #
+    #     # Map back to original group names for processing
+    #     selected_groups = [inverse_format_group_name(group) for group in selected_display_groups]
+    #
+    # with col2:
+    #     metric = st.radio(
+    #         "Show:",
+    #         ['Number of Protests', 'Number of Protesters'],
+    #         horizontal=True
+    #     )
+    #
+    # with col3:
+    #     aggregation = st.radio(
+    #         "Resolution:",
+    #         ['Week', 'Month'],
+    #         horizontal=True
+    #     )
 
     # Plot for Pro Palestine
     palestine_plot, grouped_data_p = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, aggregation, pro_palestine=True)

@@ -33,7 +33,7 @@ def app():
     - The scale of violent vs. non-violent protests.  
     - Crowd size distribution and highlights of the two largest events.
 
-    ⚠️ **Key Insight:**  
+    **Key Insight:** 
     1. **Insights:** These are calculated and displayed either for an **individual group** (if one group is selected) or a **summary of all selected groups** (if multiple groups are chosen).  
     2. **Visualizations:** These dynamically adjust to show data for all the groups selected in the filters, reflecting the combined data for those groups.
     3. **Important:** Pay attention to the **X-axis** and **Y-axis** scaling as it can vary significantly between groups due to differences in the number of protests and protesters.  
@@ -180,14 +180,14 @@ def app():
                 'lgbt_group', 'other_group'
             ]
             group_colors = {
-                'palestenian_group': "#FF0000",  # Red
-                'jewish_group': "#0000FF",  # Blue
-                'students_group': "#800080",  # Purple
-                'teachers_group': "#FFFF00",  # Yellow
-                'women_group': "#00FF00",  # Green
-                'political_group': "#FFA500",  # Orange
-                'lgbt_group': "#FFC0CB",  # Pink
-                'other_group': "#808080"  # Grey
+                "palestenian_group": "#FF0000",
+                "jewish_group": "#0000FF",
+                "students_group": "#D34611",
+                "teachers_group": "#F1CD00",
+                "women_group": "#3B2C6A",
+                "political_group": "#1B2E1B",
+                "lgbt_group": "#F6478A",
+                "other_group": "#3A3333"
             }
 
             group_counts = {group: violent_df[group].sum() for group in groups if group in violent_df.columns}
