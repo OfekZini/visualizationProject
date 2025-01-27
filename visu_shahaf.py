@@ -174,7 +174,7 @@ def app():
 
         return fig1, fig2
 
-    st.title("📊 Protests in the USA: October 7th, 2023, and Beyond")
+    st.title("Protests in the USA: October 7th, 2023, and Beyond")
 
     st.markdown("""
     <style>
@@ -185,9 +185,9 @@ def app():
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown(
-        '<p class="main-title">This dashboard offers a comprehensive analysis of protests in the United States.</p>',
-        unsafe_allow_html=True)
+    # st.markdown(
+    #     '<p class="main-title">This dashboard offers a comprehensive analysis of protests in the United States.</p>',
+    #     unsafe_allow_html=True)
 
     st.markdown("""
     <div class="info-text">
