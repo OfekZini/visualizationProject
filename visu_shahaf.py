@@ -73,8 +73,10 @@ def app():
         # Adjust layout and height
         fig.update_layout(
             height=650,
-            margin={"r": 0, "t": 40, "l": 0, "b": 0}
+            margin={"r": 0, "t": 40, "l": 0, "b": 0},
+            legend_title="Protest Type"
         )
+
         return fig
 
 
@@ -102,6 +104,8 @@ def app():
             monthly_sums_palestine.max() if len(monthly_sums_palestine) > 0 else 0
         )
 
+        yaxis_max = max_monthly_protests * 1.2 if max_monthly_protests > 0 else 10  # Add 20% buffer, minimum 10
+
         # allocate relevant subsets of the data by the protest type
         pro_israel = filtered_data[filtered_data['Pro Israel'] == 1]
         pro_palestine = filtered_data[filtered_data['Pro Palestine'] == 1]
@@ -114,20 +118,20 @@ def app():
             name='Pro-Israel',
             marker=dict(color='blue'),
             nbinsx=30,
-            opacity=0.7
+            opacity=1
         ))
 
         fig1.update_layout(
             title="Pro-Israel Protests Over Time",
             xaxis_title="Date",
-            yaxis_title="Count of Protests",
+            yaxis_title="Number of Protests",
             xaxis_range=date_range,
             xaxis=dict(
                 dtick="M1",
                 tickformat="%b %Y",
                 tickangle=45
             ),
-            yaxis_range=[0, max_monthly_protests],
+            yaxis_range=[0, yaxis_max],
             height=300,
             width=800,
             margin=dict(
@@ -147,20 +151,20 @@ def app():
             name='Pro-Palestine',
             marker=dict(color='red'),
             nbinsx=30,
-            opacity=0.7
+            opacity=1
         ))
 
         fig2.update_layout(
             title="Pro-Palestine Protests Over Time",
             xaxis_title="Date",
-            yaxis_title="Count of Protests",
+            yaxis_title="Number of Protests",
             xaxis_range=date_range,
             xaxis=dict(
                 dtick="M1",
                 tickformat="%b %Y",
                 tickangle=45
             ),
-            yaxis_range=[0, max_monthly_protests],
+            yaxis_range=[0, yaxis_max],
             height=300,
             width=800,
             margin=dict(
@@ -174,49 +178,41 @@ def app():
 
         return fig1, fig2
 
-    st.title("Protests in the USA: October 7th, 2023, and Beyond")
+    st.markdown(
+        """
+        <style>
+            .highlight {
+                background-color: orange;
+                font-weight: bold;
+                padding: 2px 4px;
+                border-radius: 4px;
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
+    st.title("Where are the protests happening?")
+
+    st.markdown(
+        """
+        This page provides a detailed analysis of **protests locations** in the USA during the first year of Swords of Iron
+        War, following state-by-state analysis of the amount of protests occurred in every state.
+        """
+    )
+
+    st.subheader("How To Use:")
     st.markdown("""
-    <style>
-        .main-title { font-size: 28px; font-weight: bold; text-align: center; }
-        .section-title { font-size: 20px; font-weight: bold; margin-top: 20px; }
-        .highlight { color: #FF5733; font-weight: bold; }
-        .info-text { font-size: 16px; line-height: 1.6; margin-top: 10px; }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # st.markdown(
-    #     '<p class="main-title">This dashboard offers a comprehensive analysis of protests in the United States.</p>',
-    #     unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="info-text">
-    The data covers both <span class="highlight">Pro-Israeli</span> and <span class="highlight">Pro-Palestinian</span> protests from 
-    October 7th, 2023, to November 8th, 2024.
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<p class="section-title">Key Questions Explored:</p>', unsafe_allow_html=True)
-    st.markdown("""
-    - Where are the protests happening? (State-by-state analysis)
-    - What types of groups are involved? (Political groups, LGBTQ+, students, etc.)
-    - Are protests more frequent around significant events?
-    - What is the ratio of violent protests to peaceful ones?
-    """)
-
-    st.markdown('<p class="section-title">Protest Locations Across the USA</p>', unsafe_allow_html=True)
-    st.markdown("""
-    <div class="info-text">
-    Each point on the map represents a protest event. Hover over a point to view detailed event information.
-    </div>
-
-    <div class="info-text">
-    Features of the map:
-    - Use the <span class="highlight">state selection box</span> (on the right) to filter protests by state.
-    - Toggle between <span class="highlight">Pro-Israeli</span> and <span class="highlight">Pro-Palestinian</span> protests using the legend.
-    - View monthly protest counts for a selected state on the right side of the dashboard.
-    </div>
-    """, unsafe_allow_html=True)
+        **USA Map of Protests:**\n
+        - Use the legend in order to filter Protest Type.
+        - You can zoom in and out on the map using the tools menu or your mouse scroller, press 'Reset' on the tools
+        menu in order to reset the zoom.
+        - Hover over the points on the map to see the protest type, state, and event date.\n
+            
+        **State Selection and Chronological Analysis:**\n
+        - Select the state you wish to observe (default - All States).
+        - The y-axis scale is aligned for both plots, you can reset the scales by pressing the 'Autoscale' button. You
+        can also reset to default scales by pressing the 'Reset axes' button.
+        """)
 
     # Create a two-column layout with adjusted widths
     col1, col2 = st.columns([3, 2])  # col1 (map) is wider, col2 (plots) is narrower
@@ -249,6 +245,5 @@ def app():
     # Map on the left (col1)
     with col1:
         st.subheader("USA Map of Protests")  # subheader
-        # print in terminal the selected state
         usa_map = plot_usa_map(protests_df, selected_state)
         st.plotly_chart(usa_map, use_container_width=True, height=700)  # Larger map height

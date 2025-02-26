@@ -19,7 +19,8 @@ def app():
 
     @st.cache_data
     def load_timeline_data():
-        return pd.read_csv("Timeline_cleaned.csv")
+        # return pd.read_csv("Timeline_cleaned.csv")
+        return pd.read_csv("shrinked timeline.csv")
 
     # Load data
     protests_df = load_protests_data()
@@ -32,7 +33,7 @@ def app():
 
 
     # Define date range
-    START_DATE = datetime(2023, 10, 8)
+    START_DATE = datetime(2023, 10, 7)
     END_DATE = datetime(2024, 11, 7)
 
     # Filter data within the specified date range
@@ -59,16 +60,19 @@ def app():
         date_options.append(f"{formatted_date} - {row['Event']}")
 
     # Title and description
-    st.title("Significant Events in Light of October 7")
-    st.markdown("""Visualization Explanation
-    This dashboard provides a visual comparison of protests and related events across USA, focusing on the period surrounding October 7th. Users can explore trends in pro-Palestinian and pro-Israeli protests, understand the context of key events, and examine the demographics, crowd sizes, and violence levels associated with the protests.For each selected date, a stacked bar chart displays the number of protests in a ±10-day window. User Instructions-Event Selection:
+    st.title("Are protests more frequent around significant events?")
+    st.markdown("""
+    This page allows you to compare the **frequency of protests around two significant events or dates**. The visualization
+    shows the number of protests in the 10 days leading up to and following each selected date. You can choose from a
+    list of predefined events or input custom dates within the specified range.
     """)
 
     st.subheader("How To Use:")
-
     st.markdown("""
-        - Choose two events or dates for comparison using the dropdown menus or select custom dates within the specified range.
-        - The "Predefined Events" option provides significant dates with context, while "Custom Date" allows manual input. """)
+        - Choose an event or a custom date for the **first** plot.
+        - Choose an event or a custom date for the **second** plot.
+        - You can zoom in on the plots by selecting a specific area on the plot using your mouse.
+        """)
 
     # Function to create date input with specific range
     def custom_date_input(label, key, default_date=None):
@@ -90,7 +94,39 @@ def app():
     def find_timeline_event(selected_date):
         timeline_row = timeline_df[timeline_df['Date'].dt.date == selected_date.date()]
         return timeline_row['Event'].iloc[0] if len(timeline_row) > 0 else "Not listed in special events"
+
     def select_dates():
+        # Initialize session state variables if they don't exist
+        if 'selected_date1' not in st.session_state:
+            st.session_state.selected_date1 = date_options[0] if date_options else None
+        if 'selected_date2' not in st.session_state:
+            # Initialize with second option or first if only one exists
+            st.session_state.selected_date2 = date_options[1] if len(date_options) > 1 else None
+
+        # Callback functions to update session state
+        def update_date1():
+            # Make sure dates aren't the same
+            if st.session_state.date1 == st.session_state.selected_date2:
+                # Find a different option
+                for option in date_options:
+                    if option != st.session_state.selected_date2:
+                        st.session_state.selected_date1 = option
+                        break
+            else:
+                st.session_state.selected_date1 = st.session_state.date1
+
+        def update_date2():
+            # Make sure dates aren't the same
+            if st.session_state.date2 == st.session_state.selected_date1:
+                # Find a different option
+                for option in date_options:
+                    if option != st.session_state.selected_date1:
+                        st.session_state.selected_date2 = option
+                        break
+            else:
+                st.session_state.selected_date2 = st.session_state.date2
+
+        # Start the UI layout
         col1, col2 = st.columns(2, gap="large")
 
         with col1:
@@ -107,12 +143,20 @@ def app():
 
             with col1_row2:
                 if first_method == "Predefined Events":
-                    selected_date1 = st.selectbox(
+                    # Filter out the option selected in the second column
+                    filtered_options = [option for option in date_options
+                                        if option != st.session_state.selected_date2]
+
+                    st.selectbox(
                         "Date:",
-                        options=date_options,
-                        index=0,
-                        key="date1"
+                        options=filtered_options,
+                        index=filtered_options.index(st.session_state.selected_date1)
+                        if st.session_state.selected_date1 in filtered_options else 0,
+                        key="date1",
+                        on_change=update_date1
                     )
+
+                    selected_date1 = st.session_state.selected_date1
                     date1 = datetime.strptime(selected_date1.split(' - ')[0], '%d/%m/%Y')
                     event1 = selected_date1.split(' - ')[1]
                 else:
@@ -121,6 +165,12 @@ def app():
                         key="custom_date1",
                         default_date=datetime(2023, 10, 8).date()
                     )
+
+                    # Ensure custom date1 is not the same as date2
+                    if 'date2' in st.session_state and isinstance(st.session_state.date2, datetime):
+                        if date1 == st.session_state.date2.date():
+                            st.warning("Please select a different date than the second selection.")
+
                     date1 = datetime.combine(date1, datetime.min.time())
                     event1 = find_timeline_event(date1)
 
@@ -138,13 +188,20 @@ def app():
 
             with col2_row2:
                 if second_method == "Predefined Events":
-                    filtered_options = date_options if first_method != "Predefined Events" else [option for option in date_options if option != selected_date1]
-                    selected_date2 = st.selectbox(
+                    # Filter out the option selected in the first column
+                    filtered_options = [option for option in date_options
+                                        if option != st.session_state.selected_date1]
+
+                    st.selectbox(
                         "Date:",
                         options=filtered_options,
-                        index=0,
-                        key="date2"
+                        index=filtered_options.index(st.session_state.selected_date2)
+                        if st.session_state.selected_date2 in filtered_options else 0,
+                        key="date2",
+                        on_change=update_date2
                     )
+
+                    selected_date2 = st.session_state.selected_date2
                     date2 = datetime.strptime(selected_date2.split(' - ')[0], '%d/%m/%Y')
                     event2 = selected_date2.split(' - ')[1]
                 else:
@@ -153,6 +210,12 @@ def app():
                         key="custom_date2",
                         default_date=datetime(2023, 10, 9).date()
                     )
+
+                    # Ensure custom date2 is not the same as date1
+                    if 'date1' in st.session_state and isinstance(date1, datetime):
+                        if date2 == date1.date():
+                            st.warning("Please select a different date than the first selection.")
+
                     date2 = datetime.combine(date2, datetime.min.time())
                     event2 = find_timeline_event(date2)
 
@@ -278,6 +341,7 @@ def app():
 
     # Get max y-value for consistent scaling
     max_y = get_max_y_value(date1, date2)
+    max_y = max_y * 1.2 if max_y > 0 else 10
 
     # Create graphs
     col1, col2 = st.columns(2)
@@ -285,7 +349,8 @@ def app():
     with col1:
         st.markdown(f"### Protests around {date1.strftime('%d/%m/%Y')}")
         st.markdown(f"*Event:* {event1}")
-        st.plotly_chart(create_protest_graph(date1, event1, max_y), use_container_width=True)
+        st.plotly_chart(create_protest_graph(date1, event1, max_y), use_container_width=True,
+                        key=f"graph_{date1.strftime('%Y%m%d')}_1")
 
         pop_details1 = get_population_details(date1)
         st.markdown(f"""
@@ -293,13 +358,13 @@ def app():
         - Most Prevalent Group: {pop_details1['most_prevalent_group'].title()}
         - Largest Crowd Size: {pop_details1['max_crowd_size']}
         - Violent Protest: {pop_details1['violent_protests']}
-    
         """)
 
     with col2:
         st.markdown(f"### Protests around {date2.strftime('%d/%m/%Y')}")
         st.markdown(f"*Event:* {event2}")
-        st.plotly_chart(create_protest_graph(date2, event2, max_y), use_container_width=True)
+        st.plotly_chart(create_protest_graph(date2, event2, max_y), use_container_width=True,
+                        key=f"graph_{date2.strftime('%Y%m%d')}_2")
 
         pop_details2 = get_population_details(date2)
         st.markdown(f"""
@@ -308,3 +373,4 @@ def app():
         - Largest Crowd Size: {pop_details2['max_crowd_size']}
         - Violent Protest: {pop_details2['violent_protests']}
         """)
+

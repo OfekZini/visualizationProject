@@ -15,7 +15,9 @@ def app():
     @st.cache_data
     def load_data():
         protests_df = pd.read_csv(r'protests us final.csv')
-        timeline_df = pd.read_excel(r'Timeline.xlsx')
+        # timeline_df = pd.read_csv(r'Timeline1.csv')
+        timeline_df = pd.read_csv("shrinked timeline.csv")
+        timeline_df['Date'] = pd.to_datetime(timeline_df['Date'])
         return protests_df, timeline_df
 
     protests_df, timeline_df = load_data()
@@ -25,30 +27,21 @@ def app():
     timeline_df['Date'] = pd.to_datetime(timeline_df['Date'], dayfirst=True)
 
     # Title
-    st.title("Violent Protests in North America")
+    st.title("Violent Protests Overview")
 
     st.markdown("""  
-    This page focuses on **violent protests** in USA, providing insights into:  
-    - Violent protesters over time and group distributions.  
-    - The scale of violent vs. non-violent protests.  
-    - Crowd size distribution and highlights of the two largest events.
-
-    **Key Insight:** 
-    1. **Insights:** These are calculated and displayed either for an **individual group** (if one group is selected) or a **summary of all selected groups** (if multiple groups are chosen).  
-    2. **Visualizations:** These dynamically adjust to show data for all the groups selected in the filters, reflecting the combined data for those groups.
-    3. **Important:** Pay attention to the **X-axis** and **Y-axis** scaling as it can vary significantly between groups due to differences in the number of protests and protesters.  
-
+    This page focuses on **violent protests** for **Pro-Isareli, Pro-Palestinian, and Two-sided** protests in the USA.
     """)
 
     # Create multi-select for protest types
     st.subheader("Select protest types to visualize:")
     col1, col2, col3 = st.columns(3)
     with col1:
-        pro_palestine = st.checkbox("Pro Palestine", value=True)
+        pro_palestine = st.checkbox("Pro Palestine Protests", value=True)
     with col2:
-        pro_israel = st.checkbox("Pro Israel")
+        pro_israel = st.checkbox("Pro Israel Protests")
     with col3:
-        both = st.checkbox("Pro Israel & Pro Palestine")
+        both = st.checkbox("Two-sided Protests")
 
     # Colors for different protest types
     colors = {
@@ -104,16 +97,15 @@ def app():
             ))
 
         fig.update_layout(
-            title="Violent Protests Over Time",
+            title="Number of Violent Protesters over Time",
             xaxis_title="Date",
-            yaxis_title="Total Crowd Size",
+            yaxis_title="Number of Protesters",
             height=400,
             template="plotly_white"
         )
         st.plotly_chart(fig, use_container_width=True)
 
     with right_col:
-        st.subheader("Insights")
         selected_types = []
 
         if pro_palestine:
@@ -162,7 +154,7 @@ def app():
             ))
 
             fig_violent.update_layout(
-                title="Violent vs Non-Violent Protests",
+                title="Violent vs Non-Violent Distribution",
                 barmode="stack",
                 height=200,
                 xaxis_title="Number of Protests",
