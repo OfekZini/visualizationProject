@@ -66,6 +66,7 @@ def app():
             <li>Are protests more frequent around significant events?</li>
             <li>What is the ratio of violent protests to peaceful ones?</li>
         </ul>
+        Please use the sidebar to navigate between the different sections of our analysis.
         </div>
         """,
         unsafe_allow_html=True,
