@@ -3,16 +3,12 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import locale
+
 locale.setlocale(locale.LC_TIME, 'en_GB')
 
 
-# # Set page configuration to wide layout
-# st.set_page_config(layout="wide")
-
 def app():
-    # Set page configuration to wide layout
-    # st.set_page_config(page_title="Data Visualisation", layout="wide")
-# Load the datasets
+    # Load the datasets
     @st.cache_data
     def load_protests_data():
         return pd.read_csv("protests us final.csv")
@@ -30,8 +26,6 @@ def app():
     protests_df['event_date'] = pd.to_datetime(protests_df['event_date'], dayfirst=True)
     timeline_df['Date'] = pd.to_datetime(timeline_df['Date'])
 
-
-
     # Define date range
     START_DATE = datetime(2023, 10, 7)
     END_DATE = datetime(2024, 11, 7)
@@ -40,11 +34,11 @@ def app():
     protests_df = protests_df[
         (protests_df['event_date'] >= START_DATE) &
         (protests_df['event_date'] <= END_DATE)
-    ]
+        ]
     timeline_df = timeline_df[
         (timeline_df['Date'] >= START_DATE) &
         (timeline_df['Date'] <= END_DATE)
-    ]
+        ]
 
     # Remove missing values
     protests_df = protests_df.dropna(subset=['event_date'])
@@ -72,7 +66,12 @@ def app():
         - Choose an event or a custom date for the **first** plot.
         - Choose an event or a custom date for the **second** plot.
         - You can zoom in on the plots by selecting a specific area on the plot using your mouse.
+        - Use the toggle below to change the stacking order of Pro Israel and Pro Palestine protests.
+        - Use the 'Change Axis Relation' toggle to switch between the x-axis relation for more clarity.
         """)
+
+    # Add toggle for stacking order
+    reverse_stack = st.toggle("Change Axis Relation (ON - Pro Israel base, OFF - Pro Palestine base)", value=True)
 
     # Function to create date input with specific range
     def custom_date_input(label, key, default_date=None):
@@ -221,11 +220,8 @@ def app():
 
         return date1, date2, event1, event2
 
-
-
     # Get selected dates and events
     date1, date2, event1, event2 = select_dates()
-
 
     def get_population_details(selected_date):
         filtered_df = protests_df[protests_df['event_date'] == selected_date]
@@ -245,7 +241,8 @@ def app():
         violent_protests = filtered_df['Violent'].max()
 
         return {
-            'most_prevalent_group': most_prevalent_group.replace('_', ' ').replace('group', '').strip() if most_prevalent_group else 'No group found',
+            'most_prevalent_group': most_prevalent_group.replace('_', ' ').replace('group',
+                                                                                   '').strip() if most_prevalent_group else 'No group found',
             'group_count': group_counts.get(most_prevalent_group, 0),
             'max_crowd_size': max_crowd_size if max_crowd_size != -1 else 'No information about crowd size for the selected date',
             'violent_protests': 'YES' if violent_protests == 1 else 'NO'
@@ -269,35 +266,29 @@ def app():
         # Create the stacked bar plot
         fig = go.Figure()
 
+        # Determine the order to add traces based on toggle state
+        categories = ['Pro Palestine', 'Pro Israel'] if not reverse_stack else ['Pro Israel', 'Pro Palestine']
+        colors = ['red', 'blue'] if not reverse_stack else ['blue', 'red']
+
         # Add traces for other dates (with lower opacity)
         for date in date_range:
             if date.date() != center_date.date():
                 day_data = filtered_df[filtered_df['event_date'].dt.date == date.date()]
 
-                # Pro Israel
-                count = len(day_data[day_data['Pro Israel'] == 1])
-                if count > 0:
-                    fig.add_trace(go.Bar(x=[date], y=[count], name='Pro Israel',
-                                       marker_color='blue', opacity=0.5, showlegend=False))
-
-                # Pro Palestine
-                count = len(day_data[day_data['Pro Palestine'] == 1])
-                if count > 0:
-                    fig.add_trace(go.Bar(x=[date], y=[count], name='Pro Palestine',
-                                       marker_color='red', opacity=0.5, showlegend=False))
+                for i, category in enumerate(categories):
+                    column = category.replace(' ', ' ')
+                    count = len(day_data[day_data[column] == 1])
+                    if count > 0:
+                        fig.add_trace(go.Bar(x=[date], y=[count], name=category,
+                                             marker_color=colors[i], opacity=0.5, showlegend=False))
 
         # Add traces for selected date (with full opacity)
-        # Pro Israel
-        count = len(selected_df[selected_df['Pro Israel'] == 1])
-        if count > 0:
-            fig.add_trace(go.Bar(x=[center_date], y=[count], name='Pro Israel',
-                               marker_color='blue', showlegend=True))
-
-        # Pro Palestine
-        count = len(selected_df[selected_df['Pro Palestine'] == 1])
-        if count > 0:
-            fig.add_trace(go.Bar(x=[center_date], y=[count], name='Pro Palestine',
-                               marker_color='red', showlegend=True))
+        for i, category in enumerate(categories):
+            column = category.replace(' ', ' ')
+            count = len(selected_df[selected_df[column] == 1])
+            if count > 0:
+                fig.add_trace(go.Bar(x=[center_date], y=[count], name=category,
+                                     marker_color=colors[i], showlegend=True))
 
         # Title with event information
 
@@ -373,4 +364,3 @@ def app():
         - Largest Crowd Size: {pop_details2['max_crowd_size']}
         - Violent Protest: {pop_details2['violent_protests']}
         """)
-

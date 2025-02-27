@@ -4,15 +4,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
-# Set page configuration to wide layout
-# st.set_page_config(layout="wide")
 
 def app():
     # Load the dataset
     @st.cache_data
     def load_data():
         return pd.read_csv('protests us final.csv')
-
 
     protests_df = load_data()
 
@@ -78,7 +75,6 @@ def app():
         )
 
         return fig
-
 
     # Time-series histogram charts by selected state
     def plot_chronological_analysis(data, selected_state):

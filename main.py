@@ -14,7 +14,6 @@ pages = {
     "Protests Locations": visu_shahaf,
     "Protests Participants": dashboard_vis2,
     "Significant Events": visu_orian,
-    # "Violent Protests Deep Dive": visu_yarin
     "Violent Protests": violentNew
 }
 

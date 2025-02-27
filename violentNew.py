@@ -51,67 +51,6 @@ def app():
     # Main layout
     col1, col2 = st.columns([1, 1])  # Adjusted the width of col1 to be narrower
 
-    # with col1:
-    #     # Initialize figure
-    #     fig = go.Figure()
-    #
-    #     # Define protest types and their corresponding filters
-    #     protest_types = {
-    #         "Pro Palestine Protests": (protests_df['Pro Palestine'] == 1) &
-    #                                   (protests_df['Violent'] == 1) &
-    #                                   (protests_df['Pro Israel'] == 0),
-    #
-    #         "Pro Israel Protests": (protests_df['Pro Israel'] == 1) &
-    #                                (protests_df['Violent'] == 1) &
-    #                                (protests_df['Pro Palestine'] == 0),
-    #
-    #         "Two-sided Protests": (protests_df['Pro Palestine'] == 1) &
-    #                               (protests_df['Pro Israel'] == 1) &
-    #                               (protests_df['Violent'] == 1)
-    #     }
-    #
-    #     # Add traces for each protest type
-    #     for protest_type, condition in protest_types.items():
-    #         data = protests_df[condition]
-    #
-    #         if not data.empty:  # Avoid adding empty traces
-    #             grouped = data.groupby(data['event_date'].dt.to_period('D')).agg({
-    #                 'Crowd_size': 'sum'
-    #             }).reset_index()
-    #
-    #             # Convert the 'event_date' index to proper datetime format
-    #             grouped['event_date'] = grouped['event_date'].dt.to_timestamp()
-    #
-    #             fig.add_trace(go.Scatter(
-    #                 x=grouped['event_date'],
-    #                 y=grouped['Crowd_size'],
-    #                 mode='lines',
-    #                 name=protest_type,
-    #                 line=dict(color=colors[protest_type], width=2),
-    #                 hovertemplate="<b>Date:</b> %{x}<br><b>Total Crowd Size:</b> %{y}"
-    #             ))
-    #
-    #     # Update layout for better readability
-    #     fig.update_layout(
-    #         title="Number of Violent Protesters Over Time",
-    #         xaxis_title="Date",
-    #         yaxis_title="Number of Protesters",
-    #         height=450,
-    #         template="plotly_white",
-    #         legend=dict(
-    #             orientation="h",  # Horizontal legend
-    #             yanchor="bottom",
-    #             y=-0.3,  # Position below the chart
-    #             xanchor="center",
-    #             x=0.5
-    #         ),
-    #         xaxis=dict(showgrid=True),
-    #         yaxis=dict(showgrid=True)
-    #     )
-    #
-    #     # Display the chart
-    #     st.plotly_chart(fig, use_container_width=True)
-
     # Define protest types and their corresponding filters (Reordered)
     protest_types = {
         "Two-sided Protests": (protests_df['Pro Palestine'] == 1) &

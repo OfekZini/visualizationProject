@@ -4,15 +4,9 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import timedelta, datetime
 
-# Set page configuration to wide layout
-# st.set_page_config(page_title="Data Visualisation", layout="wide")
-
-
 
 def app():
-    # Set page configuration to wide layout
-    # st.set_page_config(page_title="Data Visualisation", layout="wide")
-# Load the dataset
+    # Load the dataset
     @st.cache_data
     def load_data():
         # Load the dataset
@@ -45,11 +39,9 @@ def app():
             return 'LGBT'  # Always display as LGBT
         return group_name.capitalize()
 
-
     def inverse_format_group_name(display_name):
         """Revert formatted group names back to the original column names."""
         return display_name.lower().replace(" ", "_") + "_group"
-
 
     def visualize_line_plot(df, start_date, end_date, selected_groups, metric, aggregation, pro_palestine=True):
         # Filter based on Pro Palestine or Pro Israel
@@ -206,7 +198,6 @@ def app():
     # Ensure start_date is before end_date
     if start_date > end_date:
         st.error("Start date must be before or equal to the end date.")
-
 
     with col3:
         # Group selection
