@@ -1,17 +1,20 @@
 import dashboard_vis2
+import open_page
 import visu_shahaf
 import visu_orian
 import visu_yarin
+import violentNew
 import streamlit as st
 
 st.set_page_config(page_title="Data Visualisation", layout="wide")
 
 # Page options
 pages = {
-    "Protests Overview": visu_shahaf,
-    "Who are the protestors": dashboard_vis2,
+    "Home": open_page,
+    "Protests Locations": visu_shahaf,
+    "Protests Participants": dashboard_vis2,
     "Significant Events": visu_orian,
-    "Violent Protests Deep Dive": visu_yarin
+    "Violent Protests": violentNew
 }
 
 # Sidebar menu

@@ -4,19 +4,13 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import timedelta, datetime
 
-# Set page configuration to wide layout
-# st.set_page_config(page_title="Data Visualisation", layout="wide")
-
-
 
 def app():
-    # Set page configuration to wide layout
-    # st.set_page_config(page_title="Data Visualisation", layout="wide")
-# Load the dataset
+    # Load the dataset
     @st.cache_data
     def load_data():
         # Load the dataset
-        data = pd.read_csv('/Users/ofekzini/Documents/Data Engineering/Fall 2024/ויזואליזציה/Project/protests us final.csv')
+        data = pd.read_csv('protests us final.csv')
 
         # Parse dates correctly
         data['event_date'] = pd.to_datetime(data['event_date'], dayfirst=True)
@@ -37,16 +31,17 @@ def app():
 
         return data
 
-
     def format_group_name(group_name):
         """Format group names to start with a capital letter and remove '_group'."""
-        return group_name.replace("_group", "").capitalize()
-
+        group_name = group_name.replace("_group", "")
+        # Adjust specific formatting for LGBT
+        if group_name.lower() == 'lgbt':
+            return 'LGBT'  # Always display as LGBT
+        return group_name.capitalize()
 
     def inverse_format_group_name(display_name):
         """Revert formatted group names back to the original column names."""
         return display_name.lower().replace(" ", "_") + "_group"
-
 
     def visualize_line_plot(df, start_date, end_date, selected_groups, metric, aggregation, pro_palestine=True):
         # Filter based on Pro Palestine or Pro Israel
@@ -93,7 +88,7 @@ def app():
 
         # Choose metric for y-axis
         y_axis = 'num_protests' if metric == 'Number of Protests' else 'total_crowd'
-        y_label = 'Number of Protests' if metric == 'Number of Protests' else 'Number of Protesters'
+        y_label = 'Number of Protests' if metric == 'Number of Protests' else 'Number of Protestors'
 
         # Define color mapping for the selected groups
         selected_colors = {
@@ -111,7 +106,7 @@ def app():
             line_shape='linear',
             title=f'{y_label} by Group Over Time',
             labels={
-                'period': 'Period',
+                'period': 'Date',
                 y_axis: y_label,
                 'group': 'Group'
             },
@@ -120,9 +115,20 @@ def app():
             height=500
         )
 
+        # Customize hover data
+        fig.update_traces(
+            hovertemplate=(
+                "Group: %{customdata[0]}<br>"
+                "Date: %{x|%Y-%m-%d}<br>"
+                "Number of Protests: %{y}<br>"
+                "<extra></extra>"
+            ),
+            customdata=[[format_group_name(group)] for group in grouped_data['group']]  # Add the group info as customdata
+        )
+
         # Adjust line width and opacity for all traces
         for trace in fig.data:
-            trace['line']['width'] = 5  # Slightly thicker lines
+            trace['line']['width'] = 3  # Slightly thicker lines
             trace['opacity'] = 0.7
             trace['name'] = format_group_name(trace['name'])  # Format group names
 
@@ -136,7 +142,6 @@ def app():
         "students_group": "#D34611",
         "teachers_group": "#F1CD00",
         "women_group": "#3B2C6A",
-        "political_group": "#1B2E1B",
         "lgbt_group": "#F6478A",
         "other_group": "#3A3333"
     }
@@ -155,9 +160,11 @@ def app():
 
     st.subheader("How To Use:")
     st.markdown("""
-    - Select the groups of protestors you wish to visualize, enter the start date and end date.
-    - Select whether you'd like to visualize the amount of protests or the amount of protestors.
-    - Select the time resolution (week or month). 
+    - Select the start date and end date for the period you wish to view.
+    - Select the groups of protestors you wish to analyze.
+    - Select whether you'd like to view the amount of **protests** or the amount of **protestors**.
+    - Select the time resolution (week or month).
+    - You can zoom in on the plots by selecting a specific area on the plot using your mouse.
     """)
 
     # Filter Options
@@ -196,18 +203,15 @@ def app():
         # Group selection
         display_groups = [format_group_name(group) for group in original_groups_with_colors.keys()]
 
-        # Multi-select dropdown for groups
+        # Define default groups to be preselected
+        default_display_groups = ["Palestenian", "Jewish", "Students", "LGBT"]
+
+        # Multi-select dropdown for groups (without "Select All" checkbox)
         selected_display_groups = st.multiselect(
             "Groups",
             display_groups,
-            default=display_groups
+            default=default_display_groups
         )
-
-        # Checkbox for "Select All Groups" below the dropdown
-        select_all = st.checkbox("Select All Groups", value=True, help="Check this to select all groups.")
-
-        if select_all:
-            selected_display_groups = display_groups
 
         # Map back to original group names for processing
         selected_groups = [inverse_format_group_name(group) for group in selected_display_groups]
@@ -216,7 +220,7 @@ def app():
         # Metric selection
         metric = st.radio(
             "Show:",
-            ['Number of Protests', 'Number of Protesters'],
+            ['Number of Protests', 'Number of Protestors'],
             horizontal=True
         )
 
@@ -227,60 +231,6 @@ def app():
             ['Week', 'Month'],
             horizontal=True
         )
-    # st.subheader("Filter Options")
-    # # Date Range Selection
-    # min_date = protests_df['event_date'].min().date()
-    # max_date = protests_df['event_date'].max().date()
-    #
-    # col1, col2, col3 = st.columns(3)
-    #
-    # with col1:
-    #     start_date = st.date_input(
-    #         "Start Date",
-    #         value=min_date,
-    #         min_value=min_date,
-    #         max_value=max_date
-    #     )
-    #
-    # with col2:
-    #     end_date = st.date_input(
-    #         "End Date",
-    #         value=max_date,
-    #         min_value=min_date,
-    #         max_value=max_date
-    #     )
-    #
-    # # Ensure start_date is before end_date
-    # if start_date > end_date:
-    #     st.error("Start date must be before or equal to the end date.")
-    #
-    # # Group Selection, Metric Toggle, and Aggregation in the same row
-    # col1, col2, col3 = st.columns(3)
-    #
-    # with col1:
-    #     select_all = st.checkbox("Select All Groups", value=True)
-    #     display_groups = [format_group_name(group) for group in original_groups_with_colors.keys()]
-    #     if select_all:
-    #         selected_display_groups = st.multiselect("Groups", display_groups, default=display_groups)
-    #     else:
-    #         selected_display_groups = st.multiselect("Groups", display_groups, default=[])
-    #
-    #     # Map back to original group names for processing
-    #     selected_groups = [inverse_format_group_name(group) for group in selected_display_groups]
-    #
-    # with col2:
-    #     metric = st.radio(
-    #         "Show:",
-    #         ['Number of Protests', 'Number of Protesters'],
-    #         horizontal=True
-    #     )
-    #
-    # with col3:
-    #     aggregation = st.radio(
-    #         "Resolution:",
-    #         ['Week', 'Month'],
-    #         horizontal=True
-    #     )
 
     # Plot for Pro Palestine
     palestine_plot, grouped_data_p = visualize_line_plot(protests_df, start_date, end_date, selected_groups, metric, aggregation, pro_palestine=True)
@@ -291,6 +241,7 @@ def app():
     # Get the maximum y-value between the two plots
     y_column = 'num_protests' if metric == 'Number of Protests' else 'total_crowd'
     y_max = max(grouped_data_p[y_column].max(), grouped_data_i[y_column].max())
+    y_max = y_max * 1.25 if y_max > 0 else 10  # Add 10% buffer, minimum 10
 
     # Set the same y-axis limit for both plots
     palestine_plot.update_layout(yaxis=dict(range=[0, y_max]))
