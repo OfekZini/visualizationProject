@@ -141,7 +141,7 @@ def app():
         "teachers_group": "#F1CD00",
         "women_group": "#3B2C6A",
         "lgbt_group": "#F6478A",
-        "other_group": "#3A3333"
+        "other_group": "#00BABA"
     }
 
     # Load the data

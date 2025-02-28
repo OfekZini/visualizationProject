@@ -172,7 +172,7 @@ def app():
             y=protest_categories_with_totals,
             x=non_violent_percentages,
             orientation='h',
-            marker=dict(color="gray"),
+            marker=dict(color="#ADADAD"),
             text=[f"{p:.1f}% ({c})" for p, c in zip(non_violent_percentages, non_violent_counts)],
             textposition="inside",
             insidetextfont=dict(color="white")
