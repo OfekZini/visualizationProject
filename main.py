@@ -2,7 +2,6 @@ import dashboard_vis2
 import open_page
 import visu_shahaf
 import visu_orian
-import visu_yarin
 import violentNew
 import streamlit as st
 

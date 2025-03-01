@@ -37,35 +37,6 @@ def app():
         if selected_state and selected_state != "All States":
             plot_data = plot_data[plot_data['admin1'] == selected_state]
 
-        # # Create the scatter_geo plot
-        # fig = px.scatter_geo(
-        #     plot_data,
-        #     lat='latitude',
-        #     lon='longitude',
-        #     color='Protest_Type',
-        #     color_discrete_map={"Pro Israel": "blue", "Pro Palestine": "red"},
-        #     scope="usa",
-        #     hover_data={
-        #         'Protest_Type': True,
-        #         'admin1': True,
-        #         'formatted_date': True,
-        #         'latitude': False,
-        #         'longitude': False,
-        #     },
-        #     hover_name=None,
-        #     custom_data=['Protest_Type', 'admin1', 'formatted_date']
-        # )
-        #
-        # # Update hover template and marker opacity
-        # fig.update_traces(
-        #     hovertemplate=(
-        #             "Protest Type: %{customdata[0]}<br>" +
-        #             "State: %{customdata[1]}<br>" +
-        #             "Event Date: %{customdata[2]}<br>" +
-        #             "<extra></extra>"
-        #     ),
-        #     marker=dict(opacity=0.6)
-        # )
         # In the plot_usa_map function
         fig = px.scatter_geo(
             plot_data,
